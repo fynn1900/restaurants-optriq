@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurants entdecken – Optriq</title>
+  <meta name="description" content="Entdecke die besten Restaurants in deiner Stadt und reserviere direkt online.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="dot"></span>
+    Optriq Restaurants
+  </a>
+  <div class="nav-links">
+    <a href="#">Über uns</a>
+    <a href="mailto:hello@optriq-automations.org">Kontakt</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-label">Entdecken & Reservieren</div>
+  <h1>Restaurants, die<br><em>wirklich überzeugen.</em></h1>
+  <p>Ausgewählte Restaurants mit direkter Online-Reservierung – kuratiert von Optriq.</p>
+
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="Restaurant suchen…">
+    </div>
+
+    <select class="filter-select" id="city-filter">
+      <option value="">Alle Städte</option>
+    </select>
+
+    <select class="filter-select" id="cuisine-filter">
+      <option value="">Alle Küchen</option>
+    </select>
+
+    <select class="filter-select" id="rating-filter">
+      <option value="">Alle Bewertungen</option>
+      <option value="4.5">4.5+ Sterne</option>
+      <option value="4.0">4.0+ Sterne</option>
+      <option value="3.5">3.5+ Sterne</option>
+    </select>
+  </div>
+
+  <div class="filter-chips" id="price-chips">
+    <button class="chip active" data-price="">Alle Preise</button>
+    <button class="chip" data-price="€">€ Günstig</button>
+    <button class="chip" data-price="€€">€€ Mittel</button>
+    <button class="chip" data-price="€€€">€€€ Premium</button>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Alle Restaurants</h2>
+    <span class="section-count" id="result-count"></span>
+  </div>
+  <div class="restaurant-grid" id="restaurant-grid">
+    <!-- Skeleton loaders -->
+    <div class="skeleton-card">
+      <div class="skeleton-img skeleton"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line skeleton" style="width:60%"></div>
+        <div class="skeleton-line skeleton" style="width:40%"></div>
+        <div class="skeleton-line skeleton" style="width:80%"></div>
+      </div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-img skeleton"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line skeleton" style="width:70%"></div>
+        <div class="skeleton-line skeleton" style="width:35%"></div>
+        <div class="skeleton-line skeleton" style="width:90%"></div>
+      </div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-img skeleton"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line skeleton" style="width:55%"></div>
+        <div class="skeleton-line skeleton" style="width:45%"></div>
+        <div class="skeleton-line skeleton" style="width:75%"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="footer-logo">Optriq</span>
+  <p>© 2025 Optriq Automations · Alle Restaurants werden persönlich betreut.</p>
+</footer>
+
+<script type="module" src="js/listing.js"></script>
+</body>
+</html>

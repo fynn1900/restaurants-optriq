@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant – Optriq</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="dot"></span>
+    Optriq Restaurants
+  </a>
+  <div class="nav-links">
+    <a href="index.html">← Alle Restaurants</a>
+  </div>
+</nav>
+
+<a href="index.html" class="back-link" style="z-index:10;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+  Zurück zur Übersicht
+</a>
+
+<!-- HERO -->
+<div class="detail-hero" id="detail-hero">
+  <div class="detail-hero-overlay"></div>
+  <div class="detail-hero-content">
+    <div class="detail-cuisine" id="detail-cuisine"></div>
+    <h1 class="detail-name" id="detail-name">Wird geladen…</h1>
+    <div class="detail-meta" id="detail-meta"></div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="detail-body">
+  <div class="detail-main">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="info">Informationen</button>
+      <button class="tab-btn" data-tab="menu" id="tab-menu-btn">Speisekarte</button>
+      <button class="tab-btn" data-tab="gallery" id="tab-gallery-btn">Galerie</button>
+    </div>
+
+    <!-- INFO TAB -->
+    <div class="tab-panel active" id="tab-info">
+      <p class="detail-description" id="detail-description"></p>
+      <div class="info-grid" id="info-grid"></div>
+    </div>
+
+    <!-- MENU TAB -->
+    <div class="tab-panel" id="tab-menu">
+      <div id="menu-container"></div>
+    </div>
+
+    <!-- GALLERY TAB -->
+    <div class="tab-panel" id="tab-gallery">
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-card-header">
+        <h3>Tisch reservieren</h3>
+        <p>Direkt online buchen – kostenlos & sofort bestätigt</p>
+      </div>
+      <div id="booking-container"></div>
+      <div class="sidebar-actions" id="sidebar-actions"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span class="footer-logo">Optriq</span>
+  <p>© 2025 Optriq Automations</p>
+</footer>
+
+<script type="module" src="js/restaurant.js"></script>
+</body>
+</html>
