@@ -50,9 +50,10 @@ function render(r) {
   document.getElementById('detail-name').textContent = r.name;
 
   const meta = document.getElementById('detail-meta');
-  const rating = r.tripadvisor_rating || r.google_rating;
+  const rating = r.google_rating || r.tripadvisor_rating;
+  const reviewCount = r.google_review_count || r.tripadvisor_review_count;
   if (rating) {
-    meta.innerHTML += `<div class="detail-meta-item rating">${stars(rating, 15)} <span>${rating.toFixed(1)}</span><span style="opacity:.7;font-weight:400">(${r.tripadvisor_review_count || r.google_review_count || ''})</span></div>`;
+    meta.innerHTML += `<div class="detail-meta-item rating">${stars(rating, 15)} <span>${rating.toFixed(1)}</span><span style="opacity:.7;font-weight:400">(${reviewCount || ''})</span></div>`;
   }
   if (r.city) {
     meta.innerHTML += `<div class="detail-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${r.city}</div>`;
@@ -196,7 +197,7 @@ function renderOverview(r) {
 
 function renderReviews(r) {
   const reviews = r.reviews;
-  const rating = r.tripadvisor_rating || r.google_rating;
+  const rating = r.google_rating || r.tripadvisor_rating;
   if (!reviews?.length) {
     document.getElementById('tab-reviews').innerHTML = `<div class="empty-tab">Noch keine Bewertungen gespeichert.</div>`;
     return;
@@ -211,7 +212,7 @@ function renderReviews(r) {
     html += `<div class="review-score">
       <div class="review-score-number">${rating.toFixed(1)}</div>
       <div>${stars(rating, 22)}</div>
-      <div class="review-score-count">${r.tripadvisor_review_count || r.google_review_count || total} Bewertungen</div>
+      <div class="review-score-count">${r.google_review_count || r.tripadvisor_review_count || total} Bewertungen auf Google</div>
       ${r.tripadvisor_ranking ? `<div class="review-ranking">${r.tripadvisor_ranking}</div>` : ''}
     </div>
     <div class="review-histogram">
@@ -225,8 +226,8 @@ function renderReviews(r) {
   }
   if (r.tripadvisor_url) {
     html += `<a href="${r.tripadvisor_url}" target="_blank" rel="noopener" class="tripadvisor-link">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="#00aa6c"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5c2.072 0 4.01.588 5.647 1.61L19.5 6H4.5l1.853-.89A9.464 9.464 0 0 1 12 4.5zM6 9.75a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm12 0a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm-6 .75a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-      Alle auf TripAdvisor
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Alle auf Google Maps
     </a>`;
   }
   html += `</div>`;
@@ -238,7 +239,7 @@ function renderReviews(r) {
         <div>
           <div class="review-author">${rv.author}</div>
           <div class="review-meta">${stars(rv.rating, 13)} <span>${rv.date}</span>
-            ${rv.source ? `<span class="review-source">${rv.source === 'tripadvisor' ? '· TripAdvisor' : ''}</span>` : ''}
+            ${rv.source === 'google' ? `<span class="review-source">· Google</span>` : ''}
           </div>
         </div>
       </div>
