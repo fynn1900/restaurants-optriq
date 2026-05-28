@@ -57,11 +57,25 @@
     </select>
   </div>
 
-  <div class="filter-chips" id="price-chips">
-    <button class="chip active" data-price="">Alle Preise</button>
-    <button class="chip" data-price="€">€ Günstig</button>
-    <button class="chip" data-price="€€">€€ Mittel</button>
-    <button class="chip" data-price="€€€">€€€ Premium</button>
+  <div class="filter-chips-row">
+    <div class="filter-chips" id="price-chips">
+      <button class="chip active" data-price="">Alle Preise</button>
+      <button class="chip" data-price="€">€ Günstig</button>
+      <button class="chip" data-price="€€">€€ Mittel</button>
+      <button class="chip" data-price="€€€">€€€ Premium</button>
+    </div>
+
+    <button class="chip location-btn" id="location-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      Mein Standort
+    </button>
+  </div>
+
+  <div class="filter-chips" id="distance-chips" style="display:none">
+    <button class="chip active" data-km="">Alle Entfernungen</button>
+    <button class="chip" data-km="5">≤ 5 km</button>
+    <button class="chip" data-km="10">≤ 10 km</button>
+    <button class="chip" data-km="25">≤ 25 km</button>
   </div>
 </section>
 

@@ -14,3 +14,17 @@ export async function supabaseFetch(path, options = {}) {
   if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
   return res.json();
 }
+
+export async function supabaseRpc(fn, params = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON,
+      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`Supabase RPC error: ${res.status}`);
+  return res.json();
+}
