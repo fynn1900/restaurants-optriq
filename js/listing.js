@@ -71,6 +71,13 @@ function isOpenDuring(resSlug, fromMins, toMins) {
   const c = +row.close_time.slice(0,2)*60 + +row.close_time.slice(3,5);
   return o <= toMins && c >= fromMins;
 }
+function isOpenAt(resSlug, dow, mins) {
+  const row = getHoursRow(resSlug, dow);
+  if (!row || row.is_closed) return false;
+  const o = +row.open_time.slice(0,2)*60 + +row.open_time.slice(3,5);
+  const c = +row.close_time.slice(0,2)*60 + +row.close_time.slice(3,5);
+  return mins >= o && mins < c;
+}
 function rating(r) {
   const v = r.google_rating || r.tripadvisor_rating;
   const n = r.google_review_count || r.tripadvisor_review_count;
@@ -195,6 +202,189 @@ function applyI18n() {
   renderStats(allRestaurants);
 }
 
+// ─── GREETING ─────────────────────────────────────────────────────
+function renderGreeting() {
+  const el = document.getElementById('hero-greeting');
+  if (!el) return;
+  const h = NOW_H;
+  const greeting = h < 11 ? 'Guten Morgen! Schon Hunger?' :
+                   h < 14 ? 'Guten Mittag! Zeit für eine Pause?' :
+                   h < 17 ? 'Guter Nachmittag! Kaffee & Kuchen?' :
+                   h < 21 ? 'Guten Abend! Wo geht\'s heute hin?' :
+                            'Noch auf der Suche? Hier findest du was.';
+  el.textContent = greeting;
+}
+
+// ─── HERO STATS ───────────────────────────────────────────────────
+function animateCount(el, target, suffix = '') {
+  let cur = 0;
+  const step = Math.ceil(target / 40);
+  const iv = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = cur.toLocaleString('de-DE') + suffix;
+    if (cur >= target) clearInterval(iv);
+  }, 30);
+}
+function renderHeroStats(restaurants) {
+  const row = document.getElementById('hero-stats-row');
+  if (!row) return;
+  const totalRes = Object.values(reservationCounts).reduce((s,v)=>s+(v||0),0);
+  const cities   = new Set(restaurants.map(r=>r.city).filter(Boolean)).size;
+  row.innerHTML = `
+    <div class="hero-stat"><span class="hero-stat-num" id="hs-r">0</span><span class="hero-stat-label">Restaurants</span></div>
+    <div class="hero-stat"><span class="hero-stat-num" id="hs-c">0</span><span class="hero-stat-label">Städte</span></div>
+    <div class="hero-stat"><span class="hero-stat-num" id="hs-b">0</span><span class="hero-stat-label">Reservierungen heute</span></div>`;
+  setTimeout(() => {
+    animateCount(document.getElementById('hs-r'), restaurants.length);
+    animateCount(document.getElementById('hs-c'), cities);
+    animateCount(document.getElementById('hs-b'), totalRes, '+');
+  }, 300);
+}
+
+// ─── TRENDING ─────────────────────────────────────────────────────
+function renderTrending(restaurants) {
+  const sec  = document.getElementById('trending-section');
+  const grid = document.getElementById('trending-cards');
+  if (!sec||!grid) return;
+  const sorted = [...restaurants]
+    .filter(r => (reservationCounts[r.id]||0) > 0)
+    .sort((a,b) => (reservationCounts[b.id]||0) - (reservationCounts[a.id]||0))
+    .slice(0,4);
+  if (!sorted.length) return;
+  sec.style.display = 'block';
+  grid.innerHTML = sorted.map(r => `
+    <div class="trending-card" onclick="location.href='restaurant.html?slug=${r.slug}'">
+      ${r.cover_image_url
+        ? `<img class="trending-card-img" src="${r.cover_image_url}" alt="${r.name}" loading="lazy">`
+        : `<div class="trending-card-img-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/></svg></div>`}
+      <div class="trending-card-body">
+        <div class="trending-card-name">${r.name}</div>
+        <div class="trending-card-meta">${r.city||''}</div>
+        <div class="trending-card-count">🔥 ${reservationCounts[r.id]} heute</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── SEARCH MODAL ─────────────────────────────────────────────────
+function openSearchModal() {
+  document.getElementById('search-modal').classList.add('open');
+  setTimeout(() => document.getElementById('search-modal-input')?.focus(), 50);
+}
+function closeSearchModal() {
+  document.getElementById('search-modal').classList.remove('open');
+}
+function renderSearchResults(query) {
+  const el = document.getElementById('search-modal-results');
+  if (!el) return;
+  if (!query.trim()) { el.innerHTML = ''; return; }
+  const results = allRestaurants.filter(r =>
+    r.name.toLowerCase().includes(query.toLowerCase()) ||
+    (r.city||'').toLowerCase().includes(query.toLowerCase()) ||
+    (r.cuisine_type||'').toLowerCase().includes(query.toLowerCase())
+  ).slice(0,6);
+  if (!results.length) { el.innerHTML = `<div class="search-modal-empty">Keine Ergebnisse für „${query}"</div>`; return; }
+  el.innerHTML = results.map(r => `
+    <div class="search-result-item" onclick="location.href='restaurant.html?slug=${r.slug}'">
+      ${r.cover_image_url ? `<img class="sri-img" src="${r.cover_image_url}" alt="${r.name}" loading="lazy">` : `<div class="sri-img" style="background:var(--bg-subtle)"></div>`}
+      <div>
+        <div class="sri-name">${r.name}</div>
+        <div class="sri-sub">${[r.city, r.cuisine_type, (r.google_rating||r.tripadvisor_rating)&&`★ ${(r.google_rating||r.tripadvisor_rating).toFixed(1)}`].filter(Boolean).join(' · ')}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── LIVE BOOKING PULSE ───────────────────────────────────────────
+function startLiveBookingPulse(restaurants) {
+  const container = document.createElement('div');
+  container.className = 'live-booking-toast';
+  container.innerHTML = `<span class="lbt-dot"></span><span id="lbt-text"></span>`;
+  document.body.appendChild(container);
+
+  const withRes = restaurants.filter(r => (reservationCounts[r.id]||0) > 0);
+  if (!withRes.length) return;
+  let idx = 0;
+  function show() {
+    const r = withRes[idx % withRes.length];
+    const cnt = reservationCounts[r.id];
+    document.getElementById('lbt-text').textContent = `Gerade ${cnt} Reservierung${cnt!==1?'en':''} im ${r.name}`;
+    container.classList.add('show');
+    setTimeout(() => container.classList.remove('show'), 3500);
+    idx++;
+    setTimeout(show, 12000);
+  }
+  setTimeout(show, 5000);
+}
+
+// ─── PHOTO CAROUSEL ON CARDS ──────────────────────────────────────
+function initCardCarousel(cardEl, gallery) {
+  if (!gallery?.length) return;
+  const imgs = [cardEl.querySelector('.card-image img'), ...gallery.map(url => {
+    const img = document.createElement('img');
+    img.src = url; img.className = 'carousel-img'; img.loading = 'lazy'; img.alt = '';
+    return img;
+  })];
+  const container = cardEl.querySelector('.card-image');
+  imgs.slice(1).forEach(img => { img.classList.add('carousel-img'); container.appendChild(img); });
+
+  const dots = document.createElement('div');
+  dots.className = 'carousel-dots';
+  dots.innerHTML = imgs.map((_,i) => `<span class="carousel-dot ${i===0?'active':''}"></span>`).join('');
+  container.appendChild(dots);
+
+  let cur = 0, iv = null;
+  const go = (i) => {
+    imgs[cur]?.classList.remove('active'); container.querySelector('.carousel-dot.active')?.classList.remove('active');
+    cur = i; imgs[cur]?.classList.add('active');
+    dots.children[cur]?.classList.add('active');
+  };
+  cardEl.addEventListener('mouseenter', () => { iv = setInterval(() => go((cur+1)%imgs.length), 1800); });
+  cardEl.addEventListener('mouseleave', () => { clearInterval(iv); go(0); });
+}
+
+// ─── SCROLL ANIMATIONS (first load only) ──────────────────────────
+let scrollAnimDone = false;
+function initScrollAnimations() {
+  if (scrollAnimDone || !('IntersectionObserver' in window)) return;
+  scrollAnimDone = true;
+  document.body.classList.add('anim-ready');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in-view'); obs.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('#restaurant-grid .restaurant-card').forEach(c => obs.observe(c));
+  // After entrance, drop the hide-guard so filter re-renders show instantly
+  setTimeout(() => document.body.classList.remove('anim-ready'), 1600);
+}
+
+// ─── TIME PICKER ──────────────────────────────────────────────────
+let filterDayOffset = 0, filterTimeMins = null;
+
+function initTimePicker() {
+  document.getElementById('tpm-close')?.addEventListener('click', () => document.getElementById('time-picker-modal').classList.remove('open'));
+  document.getElementById('tpm-apply')?.addEventListener('click', () => {
+    filterDayOffset = parseInt(document.getElementById('tpm-day')?.value || '0');
+    const tv = document.getElementById('tpm-time')?.value || '';
+    if (tv) filterTimeMins = parseInt(tv.split(':')[0])*60 + parseInt(tv.split(':')[1]);
+    document.getElementById('time-picker-modal').classList.remove('open');
+    applyFilters();
+    const badge = document.getElementById('time-filter-badge');
+    if (badge) {
+      badge.style.display = 'inline-flex';
+      const days = ['Heute','Morgen','Übermorgen','In 3 Tagen','In 4 Tagen','In 5 Tagen','In 6 Tagen'];
+      badge.textContent = `${days[filterDayOffset]}, ${tv} Uhr ×`;
+    }
+  });
+}
+
+// ─── FLOATING CTA ─────────────────────────────────────────────────
+function initFloatCta() {
+  const cta = document.getElementById('float-cta');
+  if (!cta) return;
+  window.addEventListener('scroll', () => {
+    cta.classList.toggle('visible', window.scrollY > 600);
+  }, {passive:true});
+  cta.addEventListener('click', () => document.getElementById('restaurant-grid')?.scrollIntoView({behavior:'smooth'}));
+}
+
 // ─── WEATHER ──────────────────────────────────────────────────────
 const WX_ICONS = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',61:'🌧',63:'🌧',71:'🌨',80:'🌦',95:'⛈'};
 async function loadWeather(lat, lng) {
@@ -289,9 +479,16 @@ async function loadRestaurants() {
     populateFilters(data);
     await loadReservationCounts(data);
     renderStats(data);
+    renderGreeting();
     renderMealTimeBar();
     renderCards(filterRestaurants());
+    renderHeroStats(data);
+    renderTrending(data);
+    startLiveBookingPulse(data);
+    initFloatCta();
+    initTimePicker();
     progress(1);
+    setTimeout(initScrollAnimations, 100);
   } catch {
     document.getElementById('restaurant-grid').innerHTML =
       `<div class="empty-state" style="grid-column:1/-1"><p>${t('load_err')}</p></div>`;
@@ -338,7 +535,8 @@ function filterRestaurants() {
       && (!minR||rv>=minR) && (!activePrice||r.price_range===activePrice)
       && (!showOnlyOpen||isOpen(sl))
       && (!showOnlyFav||favorites.has(r.id))
-      && (!activeMealTime||isOpenDuring(sl, MEAL_TIMES[activeMealTime].from, MEAL_TIMES[activeMealTime].to));
+      && (!activeMealTime||isOpenDuring(sl, MEAL_TIMES[activeMealTime].from, MEAL_TIMES[activeMealTime].to))
+      && (filterTimeMins==null||isOpenAt(sl, (TODAY_DOW+filterDayOffset)%7, filterTimeMins));
   });
 
   if (userCoords && activeDistanceKm)
@@ -368,6 +566,9 @@ function renderCards(rs) {
   const seen = new Set(getSeenSlugs());
   const tx = T[getLang()]||T.de;
 
+  const carouselMap = {};
+  rs.forEach(r => { if (r.gallery_urls?.length) carouselMap[r.slug] = r.gallery_urls; });
+
   grid.innerHTML = rs.map((r,i) => {
     const dist = (userCoords&&r.lat&&r.lng) ? haversineKm(userCoords.lat,userCoords.lng,r.lat,r.lng) : null;
     const cnt  = reservationCounts[r.id];
@@ -379,7 +580,7 @@ function renderCards(rs) {
     const isFav = favorites.has(r.id);
     const wasSeen = seen.has(r.slug);
 
-    return `<div class="restaurant-card" style="animation-delay:${i*55}ms" onclick="location.href='restaurant.html?slug=${r.slug}'">
+    return `<div class="restaurant-card" data-slug="${r.slug}" style="animation-delay:${i*55}ms" onclick="location.href='restaurant.html?slug=${r.slug}'">
       <button class="card-fav-btn ${isFav?'active':''}" onclick="event.stopPropagation();window.toggleFav('${r.id}','${r.name}')" aria-label="Favorit">
         ${isFav?'♥':'♡'}
       </button>
@@ -414,6 +615,13 @@ function renderCards(rs) {
       </div>
     </div>`;
   }).join('');
+
+  // Init carousels
+  Object.entries(carouselMap).forEach(([sl, urls]) => {
+    const card = grid.querySelector(`[data-slug="${sl}"]`);
+    if (card) initCardCarousel(card, urls);
+  });
+  setTimeout(initScrollAnimations, 50);
 }
 window.toggleFav = toggleFav;
 
@@ -506,6 +714,49 @@ window._extendedRequestLocation = () => {
 };
 document.getElementById('location-btn').removeEventListener('click', requestLocation);
 document.getElementById('location-btn').addEventListener('click', window._extendedRequestLocation);
+
+// ─── SEARCH MODAL ─────────────────────────────────────────────────
+document.getElementById('search-modal-close')?.addEventListener('click', closeSearchModal);
+document.getElementById('search-modal')?.addEventListener('click', e => { if (e.target.id==='search-modal') closeSearchModal(); });
+document.getElementById('search-modal-input')?.addEventListener('input', e => renderSearchResults(e.target.value));
+document.addEventListener('keydown', e => {
+  if ((e.metaKey||e.ctrlKey) && e.key==='k') { e.preventDefault(); openSearchModal(); }
+  else if (e.key==='/' && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='SELECT') { e.preventDefault(); openSearchModal(); }
+  else if (e.key==='Escape') closeSearchModal();
+});
+
+// ─── TIME PICKER TRIGGER ──────────────────────────────────────────
+document.getElementById('time-filter-chip')?.addEventListener('click', () => document.getElementById('time-picker-modal')?.classList.add('open'));
+document.getElementById('time-filter-badge')?.addEventListener('click', () => {
+  filterDayOffset = 0; filterTimeMins = null;
+  document.getElementById('time-filter-badge').style.display = 'none';
+  applyFilters();
+});
+document.getElementById('time-picker-modal')?.addEventListener('click', e => { if (e.target.id==='time-picker-modal') e.currentTarget.classList.remove('open'); });
+
+// ─── MOBILE BOTTOM NAV ────────────────────────────────────────────
+document.getElementById('mbn-search')?.addEventListener('click', openSearchModal);
+document.getElementById('mbn-map-btn')?.addEventListener('click', () => {
+  mapView = !mapView;
+  document.getElementById('icon-map').style.display = mapView ? 'none' : 'block';
+  document.getElementById('icon-grid').style.display = mapView ? 'block' : 'none';
+  if (mapView) initMapView(filterRestaurants()); else hideMapView();
+  if (mapView) document.getElementById('map-view')?.scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('mbn-fav-btn')?.addEventListener('click', () => {
+  showOnlyFav = !showOnlyFav;
+  document.getElementById('favorites-chip')?.classList.toggle('active', showOnlyFav);
+  document.getElementById('mbn-fav-btn')?.classList.toggle('active', showOnlyFav);
+  applyFilters();
+});
+
+// ─── PAGE TRANSITION ──────────────────────────────────────────────
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href]');
+  if (!a || a.target==='_blank' || !a.getAttribute('href')?.includes('.html')) return;
+  document.body.style.cssText = 'opacity:0;transition:opacity 0.2s';
+});
+window.addEventListener('pageshow', () => { document.body.style.cssText = 'opacity:1;transition:opacity 0.3s'; });
 
 // Init
 initTheme();
