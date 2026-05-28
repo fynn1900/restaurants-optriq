@@ -1,0 +1,12 @@
+{
+  "name": "Optriq Restaurants",
+  "short_name": "Optriq",
+  "description": "Ausgewählte Restaurants direkt reservieren",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f5",
+  "theme_color": "#b8895a",
+  "icons": [
+    { "src": "https://optriq.de/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+  ]
+}

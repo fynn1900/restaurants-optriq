@@ -1,54 +1,63 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Restaurants entdecken – Optriq</title>
-  <meta name="description" content="Entdecke die besten Restaurants in deiner Stadt und reserviere direkt online.">
+  <meta name="description" content="Entdecke die besten Restaurants in deiner Stadt und reserviere direkt online – kuratiert von Optriq.">
+  <meta property="og:title" content="Optriq Restaurants – Direkt reservieren">
+  <meta property="og:description" content="Ausgewählte Restaurants mit direkter Online-Reservierung. Kostenlos, sofort bestätigt.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://restaurants-optriq.vercel.app">
+  <meta name="theme-color" content="#f8f7f5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+<div id="progress-bar"></div>
+
 <a href="https://optriq.de" target="_blank" rel="noopener" class="topbar">
-  <span>Für Restaurants: Automatisierte Reservierungen mit KI</span>
-  <span class="topbar-cta">Jetzt entdecken →</span>
+  <span data-i18n="topbar_text">Für Restaurants: Automatisierte Reservierungen mit KI</span>
+  <span class="topbar-cta" data-i18n="topbar_cta">Jetzt entdecken →</span>
 </a>
 
 <nav>
-  <a href="index.html" class="nav-logo">
-    <span class="dot"></span>
-    Optriq Restaurants
-  </a>
+  <a href="index.html" class="nav-logo"><span class="dot"></span> Optriq Restaurants</a>
   <div class="nav-links">
-    <a href="https://optriq.de" target="_blank" rel="noopener">Über uns</a>
-    <a href="https://optriq.de/#kontakt" target="_blank" rel="noopener">Kontakt</a>
+    <a href="https://optriq.de" target="_blank" rel="noopener" data-i18n="nav_about">Über uns</a>
+    <a href="https://optriq.de/#kontakt" target="_blank" rel="noopener" data-i18n="nav_contact">Kontakt</a>
   </div>
+  <div class="lang-selector">
+    <button class="lang-btn" id="lang-btn" aria-label="Sprache wählen"></button>
+    <div class="lang-dropdown" id="lang-dropdown"></div>
+  </div>
+  <button class="theme-toggle" id="theme-toggle" aria-label="Dark Mode">
+    <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
 </nav>
 
 <section class="hero">
-  <div class="hero-label">Entdecken & Reservieren</div>
-  <h1>Restaurants, die<br><em>wirklich überzeugen.</em></h1>
-  <p>Ausgewählte Restaurants mit direkter Online-Reservierung – kuratiert von Optriq.</p>
+  <div class="hero-label" data-i18n="hero_label">Entdecken & Reservieren</div>
+  <h1><span data-i18n="hero_h1_1">Restaurants, die</span><br><em data-i18n="hero_h1_em">wirklich überzeugen.</em></h1>
+  <p data-i18n="hero_desc">Ausgewählte Restaurants mit direkter Online-Reservierung – kuratiert und persönlich betreut von Optriq.</p>
 
   <div class="search-bar">
     <div class="search-input-wrap">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input type="text" id="search-input" placeholder="Restaurant suchen…">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Restaurant suchen…" autocomplete="off">
     </div>
-
     <select class="filter-select" id="city-filter">
       <option value="">Alle Städte</option>
     </select>
-
     <select class="filter-select" id="cuisine-filter">
       <option value="">Alle Küchen</option>
     </select>
-
     <select class="filter-select" id="rating-filter">
       <option value="">Alle Bewertungen</option>
       <option value="4.5">4.5+ Sterne</option>
@@ -62,18 +71,21 @@
   <div class="filter-chips-row">
     <div class="filter-chips" id="price-chips">
       <button class="chip active" data-price="">Alle Preise</button>
-      <button class="chip" data-price="€">€ Günstig</button>
-      <button class="chip" data-price="€€">€€ Mittel</button>
-      <button class="chip" data-price="€€€">€€€ Premium</button>
+      <button class="chip" data-price="€">€</button>
+      <button class="chip" data-price="€€">€€</button>
+      <button class="chip" data-price="€€€">€€€</button>
     </div>
-
-    <button class="chip location-btn" id="location-btn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-      Mein Standort
-    </button>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="chip" id="open-now-chip" data-open="false">Jetzt geöffnet</button>
+      <button class="chip" id="favorites-chip" data-fav="false">♡ Favoriten</button>
+      <button class="chip location-btn" id="location-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        Mein Standort
+      </button>
+    </div>
   </div>
 
-  <div class="filter-chips" id="distance-chips" style="display:none">
+  <div class="filter-chips" id="distance-chips" style="display:none;margin-top:8px">
     <button class="chip active" data-km="">Alle Entfernungen</button>
     <button class="chip" data-km="5">≤ 5 km</button>
     <button class="chip" data-km="10">≤ 10 km</button>
@@ -95,33 +107,17 @@
     </div>
   </div>
   <div class="restaurant-grid" id="restaurant-grid">
-    <!-- Skeleton loaders -->
-    <div class="skeleton-card">
-      <div class="skeleton-img skeleton"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line skeleton" style="width:60%"></div>
-        <div class="skeleton-line skeleton" style="width:40%"></div>
-        <div class="skeleton-line skeleton" style="width:80%"></div>
-      </div>
-    </div>
-    <div class="skeleton-card">
-      <div class="skeleton-img skeleton"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line skeleton" style="width:70%"></div>
-        <div class="skeleton-line skeleton" style="width:35%"></div>
-        <div class="skeleton-line skeleton" style="width:90%"></div>
-      </div>
-    </div>
-    <div class="skeleton-card">
-      <div class="skeleton-img skeleton"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line skeleton" style="width:55%"></div>
-        <div class="skeleton-line skeleton" style="width:45%"></div>
-        <div class="skeleton-line skeleton" style="width:75%"></div>
-      </div>
-    </div>
+    <div class="skeleton-card"><div class="skeleton-img skeleton"></div><div class="skeleton-body"><div class="skeleton-line skeleton" style="width:60%"></div><div class="skeleton-line skeleton" style="width:40%"></div><div class="skeleton-line skeleton" style="width:80%"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton-img skeleton"></div><div class="skeleton-body"><div class="skeleton-line skeleton" style="width:70%"></div><div class="skeleton-line skeleton" style="width:35%"></div><div class="skeleton-line skeleton" style="width:90%"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton-img skeleton"></div><div class="skeleton-body"><div class="skeleton-line skeleton" style="width:55%"></div><div class="skeleton-line skeleton" style="width:45%"></div><div class="skeleton-line skeleton" style="width:75%"></div></div></div>
   </div>
 </section>
+
+<button class="back-to-top" id="back-to-top" aria-label="Nach oben">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<div id="toast" class="toast"></div>
 
 <footer class="site-footer">
   <div class="footer-main">
