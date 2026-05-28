@@ -7,6 +7,40 @@ if (!slug) location.href = 'index.html';
 const DAY_ORDER = [1,2,3,4,5,6,0];
 const TODAY_DOW = new Date().getDay();
 
+// ─── TRANSLATION ──────────────────────────────────────────────────
+const TRANS_CACHE_KEY = 'optriq_trans_cache';
+function getTransCache() { try { return JSON.parse(sessionStorage.getItem(TRANS_CACHE_KEY)||'{}'); } catch { return {}; } }
+function setTransCache(obj) { try { sessionStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(obj)); } catch {} }
+
+async function translateText(text, targetLang) {
+  if (!text || targetLang === 'de') return text; // reviews are DE/EN, DE is default
+  const cacheKey = `${targetLang}::${text.slice(0,40)}`;
+  const cache = getTransCache();
+  if (cache[cacheKey]) return cache[cacheKey];
+
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=de|${targetLang}&de=fynn@optriq-automations.org`
+    );
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText || text;
+    const newCache = getTransCache();
+    newCache[cacheKey] = translated;
+    setTransCache(newCache);
+    return translated;
+  } catch {
+    return text;
+  }
+}
+
+async function translateReviews(reviews, targetLang) {
+  if (targetLang === 'de') return reviews;
+  return Promise.all(reviews.map(async rv => ({
+    ...rv,
+    text: await translateText(rv.text, targetLang),
+  })));
+}
+
 // ─── UTILS ────────────────────────────────────────────────────────
 function stars(rating, size=16) {
   const f=Math.floor(rating), h=rating%1>=0.4, e=5-f-(h?1:0);
@@ -124,7 +158,7 @@ function render(r) {
   if (r.tripadvisor_ranking) meta.innerHTML += `<div class="detail-meta-item">${r.tripadvisor_ranking}</div>`;
 
   renderOverview(r, tx);
-  renderReviews(r, tx);
+  renderReviews(r, tx); // async, translates after initial render
   renderMap(r, tx);
   renderMenu(r, tx);
   renderGallery(r, tx);
@@ -229,7 +263,9 @@ window.copyAddr = function(addr) {
 };
 
 // ─── REVIEWS ──────────────────────────────────────────────────────
-function renderReviews(r, tx) {
+async function renderReviews(r, tx) {
+  const lang = getLang();
+  // Render immediately in original, then translate async
   const reviews = r.reviews;
   const rv = r.google_rating||r.tripadvisor_rating;
   if (!reviews?.length) { document.getElementById('tab-reviews').innerHTML=`<div class="empty-tab">${tx.reviews} werden bald ergänzt.</div>`; return; }
@@ -261,7 +297,7 @@ function renderReviews(r, tx) {
     </a>`;
   }
   html += `</div><div class="reviews-list">`;
-  html += reviews.map(rv=>`<div class="review-card">
+  html += reviews.map((rv, i)=>`<div class="review-card">
     <div class="review-card-top">
       <div class="review-avatar">${rv.author[0]}</div>
       <div>
@@ -269,10 +305,20 @@ function renderReviews(r, tx) {
         <div class="review-meta">${stars(rv.rating,13)} <span>${rv.date}</span>${rv.source==='google'?`<span class="review-source">· Google</span>`:''}</div>
       </div>
     </div>
-    <p class="review-text">"${rv.text}"</p>
+    <p class="review-text" data-review-idx="${i}">"${rv.text}"</p>
   </div>`).join('');
   html += `</div>`;
   document.getElementById('tab-reviews').innerHTML = html;
+
+  // Translate async if needed
+  if (lang !== 'de') {
+    translateReviews(reviews, lang).then(translated => {
+      translated.forEach((rv, i) => {
+        const el = document.querySelector(`[data-review-idx="${i}"]`);
+        if (el) el.textContent = `"${rv.text}"`;
+      });
+    });
+  }
 }
 
 // ─── MAP ──────────────────────────────────────────────────────────
