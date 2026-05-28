@@ -507,9 +507,14 @@ function renderStats(rs) {
   const cities = new Set(rs.map(r => r.city).filter(Boolean)).size;
   const el = document.getElementById('stats-strip');
   if (!el) return;
-  el.innerHTML = `<strong>${rs.length}</strong> ${t('stat_restaurants'||'Restaurants')}
+  const lang = getLang();
+  const restWord = 'Restaurants';
+  const cityWord = cities === 1
+    ? (lang==='en'?'City':lang==='da'?'By':'Stadt')
+    : (lang==='en'?'Cities':lang==='da'?'Byer':'Städte');
+  el.innerHTML = `<strong>${rs.length}</strong> ${restWord}
     <span class="stats-divider">·</span>
-    <strong>${cities}</strong> ${cities===1?T[getLang()].stats_city||'Stadt':T[getLang()].stats_cities||'Städte'}
+    <strong>${cities}</strong> ${cityWord}
     <span class="stats-divider">·</span> ${t('stat_free')}
     <span class="stats-divider">·</span> ${t('stat_instant')}`;
 }
@@ -560,7 +565,7 @@ function filterRestaurants() {
 function renderCards(rs) {
   const grid  = document.getElementById('restaurant-grid');
   const count = document.getElementById('result-count');
-  count.textContent = `${rs.length} ${rs.length!==1?t('all_restaurants'):'Restaurant'}`;
+  count.textContent = `${rs.length} Restaurant${rs.length!==1?'s':''}`;
   if (!rs.length) { grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><p>${t('no_results')}</p></div>`; return; }
 
   const seen = new Set(getSeenSlugs());
