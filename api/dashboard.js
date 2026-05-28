@@ -21,10 +21,9 @@ module.exports = async (req, res) => {
 
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const [restaurants, reservations, guests] = await Promise.all([
+    const [restaurants, reservations] = await Promise.all([
       sb('restaurants?select=name,slug,reservation_slug,city,google_rating,google_review_count,is_active'),
       sb('reservations?select=restaurant_id,date,status,guests'),
-      sb('guests?select=id,created_at'),
     ]);
 
     const perRestaurant = (restaurants || []).map(r => {
@@ -43,7 +42,6 @@ module.exports = async (req, res) => {
       restaurants: (restaurants || []).length,
       reservations: (reservations || []).length,
       todayReservations: perRestaurant.reduce((s, r) => s + r.todayReservations, 0),
-      guests: (guests || []).length,
       avgRating: (() => {
         const rated = (restaurants || []).filter(r => r.google_rating);
         return rated.length ? (rated.reduce((s, r) => s + r.google_rating, 0) / rated.length).toFixed(2) : '–';

@@ -70,7 +70,6 @@ function render(data) {
     <div class="kpi"><div class="kpi-num">${t.restaurants}</div><div class="kpi-label">Restaurants</div></div>
     <div class="kpi"><div class="kpi-num">${t.todayReservations}</div><div class="kpi-label">Reservierungen heute</div></div>
     <div class="kpi"><div class="kpi-num">${t.reservations}</div><div class="kpi-label">Reservierungen gesamt</div></div>
-    <div class="kpi"><div class="kpi-num">${t.guests}</div><div class="kpi-label">Registrierte Gäste</div></div>
     <div class="kpi"><div class="kpi-num">${t.avgRating}</div><div class="kpi-label">Ø Bewertung</div></div>`;
   document.getElementById('rows').innerHTML = data.perRestaurant.map(r => `
     <tr>

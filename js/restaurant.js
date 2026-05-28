@@ -1,7 +1,6 @@
 import { supabaseFetch } from './supabase.js';
 import { t, getLang, setLang, LANGUAGES, T } from './i18n.js';
 import { loadAvailabilityData, computeSlots, fetchReservations, _util } from './availability.js';
-import { initAccount } from './account.js';
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) location.href = 'index.html';
@@ -673,7 +672,6 @@ document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
 
 // Init
 initTheme();
-initAccount();
 renderLangDropdown();
 initTabs();
 loadRestaurant().then(() => {

@@ -1,6 +1,5 @@
 import { supabaseFetch, supabaseRpc } from './supabase.js';
 import { t, getLang, setLang, LANGUAGES, T } from './i18n.js';
-import { initAccount, getUser, syncFavorites } from './account.js';
 
 let allRestaurants = [], allHours = [];
 let activePrice = '', activeSort = 'rating', activeDistanceKm = null;
@@ -106,10 +105,8 @@ function getSeenSlugs() { try { return JSON.parse(localStorage.getItem(SEEN_KEY)
 // ─── FAV ──────────────────────────────────────────────────────────
 function loadFavs() {
   try { favorites = new Set(JSON.parse(localStorage.getItem('optriq_favs') || '[]')); } catch { favorites = new Set(); }
-  const u = getUser();
-  if (u?.favorites?.length) u.favorites.forEach(id => favorites.add(id));
 }
-function saveFavs() { localStorage.setItem('optriq_favs', JSON.stringify([...favorites])); syncFavorites([...favorites]); }
+function saveFavs() { localStorage.setItem('optriq_favs', JSON.stringify([...favorites])); }
 function toggleFav(id, name) {
   if (favorites.has(id)) { favorites.delete(id); toast(t('fav_removed')); }
   else { favorites.add(id); toast(t('fav_added')); }
@@ -297,30 +294,6 @@ function renderForYou() {
       </div>
     </div>`;
   }).join('');
-}
-
-// ─── TRENDING ─────────────────────────────────────────────────────
-function renderTrending(restaurants) {
-  const sec  = document.getElementById('trending-section');
-  const grid = document.getElementById('trending-cards');
-  if (!sec||!grid) return;
-  const sorted = [...restaurants]
-    .filter(r => (reservationCounts[r.id]||0) > 0)
-    .sort((a,b) => (reservationCounts[b.id]||0) - (reservationCounts[a.id]||0))
-    .slice(0,4);
-  if (!sorted.length) return;
-  sec.style.display = 'block';
-  grid.innerHTML = sorted.map(r => `
-    <div class="trending-card" onclick="location.href='restaurant.html?slug=${r.slug}'">
-      ${r.cover_image_url
-        ? `<img class="trending-card-img" src="${r.cover_image_url}" alt="${r.name}" loading="lazy">`
-        : `<div class="trending-card-img-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/></svg></div>`}
-      <div class="trending-card-body">
-        <div class="trending-card-name">${r.name}</div>
-        <div class="trending-card-meta">${r.city||''}</div>
-        <div class="trending-card-count">🔥 ${reservationCounts[r.id]} heute</div>
-      </div>
-    </div>`).join('');
 }
 
 // ─── SEARCH MODAL ─────────────────────────────────────────────────
@@ -544,7 +517,6 @@ async function loadRestaurants() {
     renderCards(filterRestaurants());
     renderHeroStats(data);
     renderForYou();
-    renderTrending(data);
     startLiveBookingPulse(data);
     initFloatCta();
     initTimePicker();
@@ -823,22 +795,6 @@ document.addEventListener('click', e => {
   document.body.style.cssText = 'opacity:0;transition:opacity 0.2s';
 });
 window.addEventListener('pageshow', () => { document.body.style.cssText = 'opacity:1;transition:opacity 0.3s'; });
-
-// Account: merge server favorites with local on login
-initAccount(user => {
-  if (user?.favorites?.length) {
-    user.favorites.forEach(id => favorites.add(id));
-    saveFavs();
-    renderCards(filterRestaurants());
-  } else {
-    syncFavorites([...favorites]); // push local favs to fresh account
-  }
-});
-// If already logged in, pull server favorites
-(() => {
-  const u = getUser();
-  if (u?.favorites?.length) { u.favorites.forEach(id => favorites.add(id)); }
-})();
 
 // Init
 initTheme();
