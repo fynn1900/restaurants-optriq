@@ -1,5 +1,6 @@
 import { supabaseFetch, supabaseRpc } from './supabase.js';
 import { t, getLang, setLang, LANGUAGES, T } from './i18n.js';
+import { initAccount, getUser, syncFavorites } from './account.js';
 
 let allRestaurants = [], allHours = [];
 let activePrice = '', activeSort = 'rating', activeDistanceKm = null;
@@ -105,8 +106,10 @@ function getSeenSlugs() { try { return JSON.parse(localStorage.getItem(SEEN_KEY)
 // ─── FAV ──────────────────────────────────────────────────────────
 function loadFavs() {
   try { favorites = new Set(JSON.parse(localStorage.getItem('optriq_favs') || '[]')); } catch { favorites = new Set(); }
+  const u = getUser();
+  if (u?.favorites?.length) u.favorites.forEach(id => favorites.add(id));
 }
-function saveFavs() { localStorage.setItem('optriq_favs', JSON.stringify([...favorites])); }
+function saveFavs() { localStorage.setItem('optriq_favs', JSON.stringify([...favorites])); syncFavorites([...favorites]); }
 function toggleFav(id, name) {
   if (favorites.has(id)) { favorites.delete(id); toast(t('fav_removed')); }
   else { favorites.add(id); toast(t('fav_added')); }
@@ -820,6 +823,22 @@ document.addEventListener('click', e => {
   document.body.style.cssText = 'opacity:0;transition:opacity 0.2s';
 });
 window.addEventListener('pageshow', () => { document.body.style.cssText = 'opacity:1;transition:opacity 0.3s'; });
+
+// Account: merge server favorites with local on login
+initAccount(user => {
+  if (user?.favorites?.length) {
+    user.favorites.forEach(id => favorites.add(id));
+    saveFavs();
+    renderCards(filterRestaurants());
+  } else {
+    syncFavorites([...favorites]); // push local favs to fresh account
+  }
+});
+// If already logged in, pull server favorites
+(() => {
+  const u = getUser();
+  if (u?.favorites?.length) { u.favorites.forEach(id => favorites.add(id)); }
+})();
 
 // Init
 initTheme();

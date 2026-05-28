@@ -138,6 +138,55 @@ nav {
 .lang-option:hover, .lang-option.active { background: var(--accent-dim); color: var(--accent); }
 .lang-option .lang-flag { font-size: 18px; }
 
+/* Account button */
+#account-slot { margin-left: 8px; }
+.account-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 12px 6px 10px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: transparent;
+  color: var(--text-secondary); font-size: 13px; font-weight: 600;
+  font-family: inherit; transition: all var(--transition);
+}
+.account-btn:hover { border-color: var(--accent); color: var(--accent); }
+.account-btn.login svg { stroke: currentColor; }
+.account-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.account-name { font-weight: 600; }
+
+/* Auth modal */
+.auth-modal {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s; padding: 20px;
+}
+.auth-modal.open { opacity: 1; pointer-events: all; }
+.auth-card {
+  position: relative; width: 100%; max-width: 380px;
+  background: var(--bg-card); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 32px;
+  transform: translateY(-12px); transition: transform 0.2s;
+}
+.auth-modal.open .auth-card { transform: translateY(0); }
+.auth-close { position: absolute; top: 16px; right: 18px; font-size: 24px; background: none; border: none; color: var(--text-muted); }
+.auth-card h2 { font-family: var(--font-serif); font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+.auth-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 22px; line-height: 1.5; }
+.auth-card input {
+  width: 100%; padding: 12px 14px; margin-bottom: 12px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-subtle); color: var(--text-primary);
+  font-size: 15px; font-family: inherit; outline: none;
+}
+.auth-card input:focus { border-color: var(--accent); }
+.auth-err { color: #b43c3c; font-size: 13px; margin-bottom: 12px; display: none; }
+.auth-switch { width: 100%; margin-top: 14px; background: none; border: none; color: var(--accent); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.auth-switch:hover { color: var(--accent-hover); }
+@media (max-width: 768px) { .account-name { display: none; } }
+
 /* Theme toggle */
 .theme-toggle {
   display: flex; align-items: center; justify-content: center;

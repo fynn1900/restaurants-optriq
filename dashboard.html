@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Betreiber-Dashboard – Optriq</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dash-wrap { max-width: 1100px; margin: 0 auto; padding: 100px 40px 60px; }
+    .dash-login { max-width: 360px; margin: 120px auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); }
+    .dash-login h1 { font-family: var(--font-serif); font-size: 24px; margin-bottom: 6px; }
+    .dash-login p { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+    .dash-login input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-family: inherit; background: var(--bg-subtle); color: var(--text-primary); outline: none; margin-bottom: 12px; }
+    .dash-login input:focus { border-color: var(--accent); }
+    .dash-err { color: #b43c3c; font-size: 13px; margin-bottom: 12px; display: none; }
+    .dash-h1 { font-family: var(--font-serif); font-size: 30px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 24px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 16px; margin-bottom: 36px; }
+    .kpi { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
+    .kpi-num { font-family: var(--font-serif); font-size: 34px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .kpi-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    table.dash-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .dash-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .dash-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-subtle); font-size: 14px; }
+    .dash-table tr:last-child td { border-bottom: none; }
+    .dash-table td.num { font-weight: 700; }
+    .dash-pill { font-size: 11px; padding: 2px 8px; border-radius: 100px; font-weight: 600; }
+    .dash-pill.on { background: rgba(34,168,90,0.12); color: #22a85a; }
+    .dash-pill.off { background: var(--bg-subtle); color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div id="login" class="dash-login">
+  <h1>Dashboard</h1>
+  <p>Optriq Betreiber-Bereich</p>
+  <input type="password" id="pw" placeholder="Passwort" autocomplete="current-password">
+  <div class="dash-err" id="err"></div>
+  <button class="btn-primary" id="login-btn" style="width:100%">Anmelden</button>
+</div>
+
+<div id="dash" class="dash-wrap" style="display:none">
+  <h1 class="dash-h1">Übersicht</h1>
+  <div class="kpi-grid" id="kpis"></div>
+  <table class="dash-table">
+    <thead><tr><th>Restaurant</th><th>Stadt</th><th>Heute</th><th>Reservierungen</th><th>Gäste gesamt</th><th>Bewertung</th><th>Status</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+const errEl = document.getElementById('err');
+async function login() {
+  const password = document.getElementById('pw').value;
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch('/api/dashboard', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password }) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Fehler'; errEl.style.display = 'block'; return; }
+    sessionStorage.setItem('optriq_dash_pw', password);
+    render(data);
+  } catch { errEl.textContent = 'Verbindungsfehler'; errEl.style.display = 'block'; }
+}
+function render(data) {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  const t = data.totals;
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-num">${t.restaurants}</div><div class="kpi-label">Restaurants</div></div>
+    <div class="kpi"><div class="kpi-num">${t.todayReservations}</div><div class="kpi-label">Reservierungen heute</div></div>
+    <div class="kpi"><div class="kpi-num">${t.reservations}</div><div class="kpi-label">Reservierungen gesamt</div></div>
+    <div class="kpi"><div class="kpi-num">${t.guests}</div><div class="kpi-label">Registrierte Gäste</div></div>
+    <div class="kpi"><div class="kpi-num">${t.avgRating}</div><div class="kpi-label">Ø Bewertung</div></div>`;
+  document.getElementById('rows').innerHTML = data.perRestaurant.map(r => `
+    <tr>
+      <td><strong>${r.name}</strong></td>
+      <td>${r.city||'–'}</td>
+      <td class="num">${r.todayReservations}</td>
+      <td class="num">${r.totalReservations}</td>
+      <td class="num">${r.totalGuests}</td>
+      <td>${r.rating ? '★ '+r.rating.toFixed(1)+' ('+(r.reviewCount||0)+')' : '–'}</td>
+      <td><span class="dash-pill ${r.active?'on':'off'}">${r.active?'Aktiv':'Inaktiv'}</span></td>
+    </tr>`).join('');
+}
+document.getElementById('login-btn').addEventListener('click', login);
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key==='Enter') login(); });
+// auto-resume
+const saved = sessionStorage.getItem('optriq_dash_pw');
+if (saved) { document.getElementById('pw').value = saved; login(); }
+// theme
+document.documentElement.setAttribute('data-theme', localStorage.getItem('optriq_theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
+</script>
+</body>
+</html>
