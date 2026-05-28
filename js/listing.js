@@ -60,8 +60,9 @@ async function loadRestaurants() {
 
 async function loadReservationCounts(restaurants) {
   await Promise.all(restaurants.map(async r => {
+    const slug = r.reservation_slug || r.slug;
     try {
-      const result = await supabaseRpc('get_today_reservation_count', { form_slug: r.slug });
+      const result = await supabaseRpc('get_today_reservation_count', { form_slug: slug });
       reservationCounts[r.id] = result ?? 0;
     } catch {
       reservationCounts[r.id] = null;
@@ -178,7 +179,7 @@ function renderCards(restaurants) {
           <div class="card-footer-left">
             ${r.google_review_count ? `<span class="card-review-count">${r.google_review_count} Bewertungen</span>` : ''}
             ${todayCount !== null && todayCount !== undefined
-              ? `<span class="card-reservations-badge">${todayCount} heute</span>`
+              ? `<span class="card-reservations-badge">${todayCount} Reservierung${todayCount !== 1 ? 'en' : ''} heute</span>`
               : ''}
           </div>
           <span class="card-btn">Reservieren</span>
