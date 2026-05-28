@@ -5,7 +5,7 @@ if (!slug) location.href = 'index.html';
 
 async function loadRestaurant() {
   try {
-    const [restaurant] = await supabaseFetch(`restaurants?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&limit=1`);
+    const [restaurant] = await supabaseFetch(`restaurants?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&limit=1&select=*,booking_embed_url`);
     if (!restaurant) { location.href = 'index.html'; return; }
     render(restaurant);
     document.title = `${restaurant.name} – Optriq`;
@@ -77,17 +77,32 @@ function render(r) {
   // Booking
   const bookingContainer = document.getElementById('booking-container');
   const sidebarActions = document.getElementById('sidebar-actions');
+  const embedUrl = r.booking_embed_url;
+  const iframeId = `optriq-${r.slug}`;
 
-  if (r.booking_form_id) {
+  if (embedUrl) {
     bookingContainer.innerHTML = `
       <iframe
-        class="sidebar-booking-frame"
-        src="https://optriq-booking.vercel.app/form.html?form_id=${r.booking_form_id}"
-        title="Tisch reservieren"
+        id="${iframeId}"
+        src="${embedUrl}"
+        width="100%"
+        frameborder="0"
+        scrolling="no"
+        allowtransparency="true"
+        style="border:none;width:100%;display:block;overflow:hidden;min-height:400px;"
         loading="lazy"
       ></iframe>`;
+
+    window.addEventListener('message', e => {
+      if (e.data?.type === 'optriq-resize') {
+        const f = document.getElementById(iframeId);
+        if (f) f.style.height = (e.data.height + 20) + 'px';
+      }
+    });
+
+    const directUrl = embedUrl.replace('&embed=1', '').replace('?embed=1', '');
     sidebarActions.innerHTML = `
-      <a href="https://optriq-booking.vercel.app/form.html?form_id=${r.booking_form_id}" target="_blank" rel="noopener" class="btn-secondary">
+      <a href="${directUrl}" target="_blank" rel="noopener" class="btn-secondary">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
           <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>

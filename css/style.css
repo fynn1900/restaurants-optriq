@@ -715,17 +715,23 @@ select.filter-select:focus { border-color: var(--accent); }
 }
 
 .sidebar-card-header {
-  padding: 20px 24px 16px;
+  padding: 18px 24px 14px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.sidebar-card-header h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.sidebar-card-header h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
 .sidebar-card-header p { font-size: 13px; color: var(--text-secondary); }
 
-.sidebar-booking-frame { width: 100%; min-height: 480px; border: none; display: block; }
+#booking-container {
+  background: transparent;
+}
+
+#booking-container iframe {
+  background: transparent;
+}
 
 .sidebar-actions {
-  padding: 16px 20px;
+  padding: 12px 20px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
