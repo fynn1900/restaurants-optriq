@@ -3,7 +3,8 @@ import { supabaseFetch } from './supabase.js';
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) location.href = 'index.html';
 
-// day_of_week: 0=Sun, 1=Mon … 6=Sat
+// day_of_week: 0=Sun, 1=Mon … 6=Sat — display Mon–Sun
+const DAY_ORDER = [1,2,3,4,5,6,0];
 const DAY_LABELS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 const TODAY_DOW = new Date().getDay();
 
@@ -116,14 +117,14 @@ function renderOverview(r) {
         <span class="hours-today ${todayOpen ? 'open' : 'closed'}">${todayLabel}</span>
       </div>
       <div class="hours-grid">
-        ${DAY_LABELS.map((label, dow) => {
+        ${DAY_ORDER.map(dow => {
           const row = r._hours.find(h => h.day_of_week === dow);
           const isToday = dow === TODAY_DOW;
           const timeStr = (row && !row.is_closed)
             ? `${row.open_time.slice(0,5)}–${row.close_time.slice(0,5)}`
             : null;
           return `<div class="hours-row ${isToday ? 'today' : ''} ${!timeStr ? 'closed' : ''}">
-            <span>${label}</span><span>${timeStr || 'Geschlossen'}</span>
+            <span>${DAY_LABELS[dow]}</span><span>${timeStr || 'Geschlossen'}</span>
           </div>`;
         }).join('')}
       </div>
