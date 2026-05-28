@@ -192,8 +192,8 @@ function renderCards(restaurants) {
         ${r.description ? `<p class="card-description">${r.description}</p>` : ''}
         <div class="card-footer">
           <div class="card-footer-left">
+            ${todayCount != null && todayCount > 0 ? `<span class="card-reservations-badge">${todayCount} Reservierung${todayCount !== 1 ? 'en' : ''} heute</span>` : ''}
             ${rt?.count ? `<span class="card-review-count">${rt.count} Bewertungen</span>` : ''}
-            ${todayCount ? `<span class="card-reservations-badge">${todayCount} heute</span>` : ''}
           </div>
           <span class="card-btn">Reservieren →</span>
         </div>
