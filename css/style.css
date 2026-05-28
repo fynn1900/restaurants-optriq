@@ -941,6 +941,144 @@ select.filter-select:focus { border-color: var(--accent); }
 }
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────── */
+/* ─── OVERVIEW TAB ────────────────────────────────────────────── */
+.tag-group { margin-bottom: 24px; }
+.tag-group-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.detail-tag {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.detail-tag.feature { display: flex; align-items: center; gap: 5px; }
+
+/* HOURS */
+.hours-block { margin-bottom: 28px; }
+.hours-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+.hours-today {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 100px;
+}
+.hours-today.open { background: rgba(34,168,90,0.1); color: #22a85a; }
+.hours-today.closed { background: rgba(180,60,60,0.08); color: #b43c3c; }
+.hours-grid { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.hours-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.hours-row:last-child { border-bottom: none; }
+.hours-row.today { background: var(--accent-dim); font-weight: 600; color: var(--accent); }
+.hours-row.closed span:last-child { color: var(--text-muted); }
+
+/* INFO LIST */
+.info-list { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+}
+.info-row:last-child { border-bottom: none; }
+.info-row-icon { color: var(--text-muted); flex-shrink: 0; margin-top: 2px; }
+.info-row-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+.info-row-value { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.info-row-value a { color: var(--accent); }
+.info-row-value a:hover { color: var(--accent-hover); }
+
+/* ─── REVIEWS TAB ─────────────────────────────────────────────── */
+.reviews-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.review-score { text-align: left; }
+.review-score-number { font-size: 48px; font-weight: 800; letter-spacing: -0.04em; color: var(--text-primary); line-height: 1; margin-bottom: 6px; }
+.review-score-count { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+.review-ranking { font-size: 12px; font-weight: 600; color: var(--accent); margin-top: 6px; }
+.tripadvisor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  background: var(--bg-card);
+}
+.tripadvisor-link:hover { border-color: #00aa6c; color: #00aa6c; }
+.reviews-list { display: flex; flex-direction: column; gap: 16px; }
+.review-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+}
+.review-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.review-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.review-author { font-size: 14px; font-weight: 600; }
+.review-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.review-text { font-size: 14px; color: var(--text-secondary); line-height: 1.6; font-style: italic; }
+
+/* ─── MAP TAB ─────────────────────────────────────────────────── */
+.map-wrapper { position: relative; }
+.map-open-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-card-hover);
+  transition: all var(--transition);
+}
+.map-open-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+.empty-tab { padding: 48px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
+
 @media (max-width: 900px) {
   .detail-body { grid-template-columns: 1fr; padding: 0 20px 60px; }
   .detail-sidebar { order: -1; }

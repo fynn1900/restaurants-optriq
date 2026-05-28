@@ -6,7 +6,7 @@
   <title>Restaurant – Optriq</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -28,11 +28,9 @@
   </div>
 </nav>
 
-<a href="index.html" class="back-link" style="z-index:10;">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="15 18 9 12 15 6"/>
-  </svg>
-  Zurück zur Übersicht
+<a href="index.html" class="back-link">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  Zurück
 </a>
 
 <!-- HERO -->
@@ -49,33 +47,25 @@
 <div class="detail-body">
   <div class="detail-main">
     <div class="tabs">
-      <button class="tab-btn active" data-tab="info">Informationen</button>
-      <button class="tab-btn" data-tab="menu" id="tab-menu-btn">Speisekarte</button>
-      <button class="tab-btn" data-tab="gallery" id="tab-gallery-btn">Galerie</button>
+      <button class="tab-btn active" data-tab="overview">Übersicht</button>
+      <button class="tab-btn" data-tab="reviews">Bewertungen</button>
+      <button class="tab-btn" data-tab="map">Karte</button>
+      <button class="tab-btn" id="tab-btn-menu" data-tab="menu">Speisekarte</button>
+      <button class="tab-btn" id="tab-btn-gallery" data-tab="gallery">Galerie</button>
     </div>
 
-    <!-- INFO TAB -->
-    <div class="tab-panel active" id="tab-info">
-      <p class="detail-description" id="detail-description"></p>
-      <div class="info-grid" id="info-grid"></div>
-    </div>
-
-    <!-- MENU TAB -->
-    <div class="tab-panel" id="tab-menu">
-      <div id="menu-container"></div>
-    </div>
-
-    <!-- GALLERY TAB -->
-    <div class="tab-panel" id="tab-gallery">
-      <div class="gallery-grid" id="gallery-grid"></div>
-    </div>
+    <div class="tab-panel active" id="tab-overview"></div>
+    <div class="tab-panel" id="tab-reviews"></div>
+    <div class="tab-panel" id="tab-map"></div>
+    <div class="tab-panel" id="tab-menu"></div>
+    <div class="tab-panel" id="tab-gallery"></div>
   </div>
 
   <div class="detail-sidebar">
     <div class="sidebar-card">
       <div class="sidebar-card-header">
         <h3>Tisch reservieren</h3>
-        <p>Direkt online buchen – kostenlos & sofort bestätigt</p>
+        <p>Kostenlos · Sofort bestätigt</p>
       </div>
       <div id="booking-container"></div>
       <div class="sidebar-actions" id="sidebar-actions"></div>
