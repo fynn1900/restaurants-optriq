@@ -68,8 +68,7 @@ function render(r) {
   renderGallery(r);
   renderBooking(r);
 
-  // Hide unused tabs
-  if (!r.menu_pdf_url) document.getElementById('tab-btn-menu').style.display = 'none';
+  // Hide gallery tab if no photos; menu always visible
   if (!(r.gallery_urls?.length > 0)) document.getElementById('tab-btn-gallery').style.display = 'none';
 }
 
@@ -227,13 +226,56 @@ function renderMap(r) {
 }
 
 function renderMenu(r) {
-  if (!r.menu_pdf_url) return;
-  document.getElementById('tab-menu').innerHTML = `
-    <a href="${r.menu_pdf_url}" target="_blank" rel="noopener" class="menu-download">
+  let html = '';
+
+  // Action buttons row
+  const btns = [];
+  if (r.menu_pdf_url) {
+    btns.push(`<a href="${r.menu_pdf_url}" target="_blank" rel="noopener" class="menu-download">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Speisekarte herunterladen
-    </a>
-    <iframe class="menu-embed" src="${r.menu_pdf_url}" title="Speisekarte"></iframe>`;
+    </a>`);
+  }
+  if (r.menu_url) {
+    btns.push(`<a href="${r.menu_url}" target="_blank" rel="noopener" class="menu-download">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Jetzt online bestellen
+    </a>`);
+  }
+  if (!r.menu_pdf_url && !r.menu_url && r.website_url) {
+    btns.push(`<a href="${r.website_url}" target="_blank" rel="noopener" class="menu-download">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Zur Website
+    </a>`);
+  }
+
+  if (btns.length) html += `<div class="menu-actions">${btns.join('')}</div>`;
+
+  // Structured menu items
+  if (r.menu_items?.length) {
+    html += r.menu_items.map(cat => `
+      <div class="menu-category">
+        <h3 class="menu-category-title">${cat.category}</h3>
+        <div class="menu-items-list">
+          ${cat.items.map(item => `
+            <div class="menu-item">
+              <span class="menu-item-name">${item.name}</span>
+              ${item.price ? `<span class="menu-item-price">${item.price.toFixed(2).replace('.', ',')} €</span>` : ''}
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  // PDF embed below
+  if (r.menu_pdf_url) {
+    html += `<iframe class="menu-embed" src="${r.menu_pdf_url}" title="Speisekarte" style="margin-top:24px"></iframe>`;
+  }
+
+  if (!html) {
+    html = `<div class="empty-tab">Speisekarte wird in Kürze ergänzt.</div>`;
+  }
+
+  document.getElementById('tab-menu').innerHTML = html;
 }
 
 function renderGallery(r) {
