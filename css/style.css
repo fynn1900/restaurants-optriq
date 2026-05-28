@@ -902,6 +902,36 @@ select.filter-select:focus { border-color: var(--accent); }
 .hours-qr-sub   { font-size:13px; color:var(--text-secondary); line-height:1.5; }
 .qr-img { width:120px; height:120px; border-radius:8px; flex-shrink:0; border:1px solid var(--border); }
 
+/* ─── LIVE SLOT PICKER ───────────────────────────────────────── */
+.sp-wrap { padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); }
+.sp-loading, .sp-empty { font-size: 13px; color: var(--text-muted); padding: 12px 0; text-align: center; }
+.sp-days { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
+.sp-days::-webkit-scrollbar { display: none; }
+.sp-day {
+  flex-shrink: 0; padding: 7px 12px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--bg-card);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  white-space: nowrap; transition: all var(--transition);
+}
+.sp-day:hover { border-color: var(--accent); color: var(--accent); }
+.sp-day.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sp-guests-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.sp-guests-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.sp-stepper { display: flex; align-items: center; gap: 14px; }
+.sp-step { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg-card); font-size: 16px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; justify-content: center; transition: all var(--transition); }
+.sp-step:hover { border-color: var(--accent); color: var(--accent); }
+#sp-guests { font-size: 15px; font-weight: 700; min-width: 20px; text-align: center; }
+.sp-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px,1fr)); gap: 7px; }
+.sp-slot {
+  padding: 9px 4px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
+  border: 1.5px solid var(--border); background: var(--bg-card); color: var(--text-primary);
+  transition: all var(--transition); position: relative;
+}
+.sp-slot.free:hover, .sp-slot.low:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: translateY(-1px); }
+.sp-slot.low { border-color: rgba(220,120,0,0.4); }
+.sp-slot.low::after { content: ''; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: #dc7800; }
+.sp-slot.full { opacity: 0.4; text-decoration: line-through; cursor: not-allowed; }
+
 /* ─── PRINT ───────────────────────────────────────────────────── */
 @media print {
   nav, .topbar, .tabs, .detail-sidebar, .sticky-bar, .back-link, .site-footer, .back-to-top, .toast, .lightbox, .sidebar-share, #tab-overview, #tab-reviews, #tab-map, #tab-gallery { display: none !important; }

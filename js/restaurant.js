@@ -1,5 +1,6 @@
 import { supabaseFetch } from './supabase.js';
 import { t, getLang, setLang, LANGUAGES, T } from './i18n.js';
+import { loadAvailabilityData, computeSlots, fetchReservations, _util } from './availability.js';
 
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) location.href = 'index.html';
@@ -164,6 +165,7 @@ function render(r) {
   renderMenu(r, tx);
   renderGallery(r, tx);
   renderBooking(r, tx);
+  renderSlotPicker(r);
 
   if (!(r.gallery_urls?.length>0)) document.getElementById('tab-btn-gallery').style.display='none';
 
@@ -520,6 +522,112 @@ async function loadSimilar(r) {
         </div>
       </div>`).join('');
   } catch {}
+}
+
+// ─── LIVE SLOT PICKER (#2) ────────────────────────────────────────
+let _availData = null, _slotState = { date: null, guests: 2 };
+
+async function renderSlotPicker(r) {
+  const el = document.getElementById('slot-picker');
+  if (!el) return;
+  const resSlug = r.reservation_slug || r.slug;
+  if (!r.booking_embed_url) { el.style.display = 'none'; return; }
+
+  el.innerHTML = `<div class="sp-loading">Verfügbarkeit wird geladen…</div>`;
+  try {
+    _availData = await loadAvailabilityData(resSlug);
+    if (!_availData.cfg) { el.style.display = 'none'; return; }
+    _slotState.date = nextOpenDate();
+    drawSlotPicker(r, resSlug);
+  } catch { el.style.display = 'none'; }
+}
+
+function nextOpenDate() {
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    const ds = d.toISOString().slice(0,10);
+    if (!_util.getOhForDate(_availData, ds).isClosed) return ds;
+  }
+  return _util.todayStr();
+}
+
+function drawSlotPicker(r, resSlug) {
+  const el = document.getElementById('slot-picker');
+  const tx = T[getLang()] || T.de;
+  const lang = getLang();
+  const locale = lang==='da'?'da-DK':lang==='en'?'en-GB':'de-DE';
+
+  // Next 7 open days as pills
+  const days = [];
+  for (let i = 0; i < 14 && days.length < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    const ds = d.toISOString().slice(0,10);
+    if (_util.getOhForDate(_availData, ds).isClosed) continue;
+    days.push({ ds, label: i===0 ? 'Heute' : i===1 ? 'Morgen' : d.toLocaleDateString(locale,{weekday:'short',day:'numeric',month:'short'}) });
+  }
+
+  el.innerHTML = `
+    <div class="sp-wrap">
+      <div class="sp-row sp-days" id="sp-days">
+        ${days.map(d => `<button class="sp-day ${d.ds===_slotState.date?'active':''}" data-date="${d.ds}">${d.label}</button>`).join('')}
+      </div>
+      <div class="sp-guests-row">
+        <span class="sp-guests-label">Personen</span>
+        <div class="sp-stepper">
+          <button class="sp-step" data-step="-1">−</button>
+          <span id="sp-guests">${_slotState.guests}</span>
+          <button class="sp-step" data-step="1">+</button>
+        </div>
+      </div>
+      <div class="sp-slots" id="sp-slots"></div>
+    </div>`;
+
+  el.querySelector('#sp-days').addEventListener('click', e => {
+    const b = e.target.closest('[data-date]'); if (!b) return;
+    _slotState.date = b.dataset.date;
+    el.querySelectorAll('.sp-day').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    loadSlots(r, resSlug);
+  });
+  el.querySelector('.sp-guests-row').addEventListener('click', e => {
+    const b = e.target.closest('[data-step]'); if (!b) return;
+    _slotState.guests = Math.max(1, Math.min(20, _slotState.guests + parseInt(b.dataset.step)));
+    el.querySelector('#sp-guests').textContent = _slotState.guests;
+    loadSlots(r, resSlug);
+  });
+
+  loadSlots(r, resSlug);
+}
+
+async function loadSlots(r, resSlug) {
+  const box = document.getElementById('sp-slots');
+  if (!box) return;
+  box.innerHTML = `<div class="sp-loading">Prüfe Tische…</div>`;
+  const reservations = await fetchReservations(resSlug, _slotState.date);
+  const slots = computeSlots(_availData, _slotState.date, _slotState.guests, 'egal', reservations);
+
+  if (!slots.length) { box.innerHTML = `<div class="sp-empty">Keine Zeiten an diesem Tag.</div>`; return; }
+
+  box.innerHTML = slots.map(s => {
+    const cls = s.available ? (s.pct >= 0.7 ? 'low' : 'free') : 'full';
+    const title = s.available ? `${s.totalFreeSeats} Plätze frei` : 'Ausgebucht';
+    return `<button class="sp-slot ${cls}" ${s.available?`data-time="${s.start}"`:'disabled'} title="${title}">${s.start}</button>`;
+  }).join('');
+
+  box.querySelectorAll('[data-time]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const time = btn.dataset.time;
+      const base = r.booking_embed_url.split('?')[0];
+      const url = `${base}?r=${resSlug}&embed=1&date=${_slotState.date}&time=${time}&guests=${_slotState.guests}`;
+      const iframe = document.getElementById(`optriq-${r.slug}`);
+      if (iframe) {
+        iframe.src = url;
+        document.getElementById('booking-container')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      } else {
+        window.open(url.replace('&embed=1',''), '_blank');
+      }
+    });
+  });
 }
 
 // ─── STICKY BAR ───────────────────────────────────────────────────
