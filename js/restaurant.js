@@ -3,14 +3,20 @@ import { supabaseFetch } from './supabase.js';
 const slug = new URLSearchParams(location.search).get('slug');
 if (!slug) location.href = 'index.html';
 
-const DAYS = { Mon: 'Montag', Tue: 'Dienstag', Wed: 'Mittwoch', Thu: 'Donnerstag', Fri: 'Freitag', Sat: 'Samstag', Sun: 'Sonntag' };
-const TODAY_KEY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date().getDay()];
+// day_of_week: 0=Sun, 1=Mon … 6=Sat
+const DAY_LABELS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+const TODAY_DOW = new Date().getDay();
 
 async function loadRestaurant() {
   try {
     const [r] = await supabaseFetch(`restaurants?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&limit=1`);
     if (!r) { location.href = 'index.html'; return; }
     document.title = `${r.name} – Optriq`;
+
+    const resSlug = r.reservation_slug || r.slug;
+    const hours = await supabaseFetch(`opening_hours_weekly?restaurant_id=eq.${resSlug}&order=day_of_week`);
+    r._hours = hours;
+
     render(r);
   } catch { location.href = 'index.html'; }
 }
@@ -81,20 +87,28 @@ function renderOverview(r) {
     </div></div>`;
   }
 
-  // Opening hours
-  if (r.opening_hours) {
-    const todayHours = r.opening_hours[TODAY_KEY];
+  // Opening hours from Supabase
+  if (r._hours?.length) {
+    const todayRow = r._hours.find(h => h.day_of_week === TODAY_DOW);
+    const todayOpen = todayRow && !todayRow.is_closed;
+    const todayLabel = todayOpen
+      ? `Heute geöffnet · ${todayRow.open_time.slice(0,5)}–${todayRow.close_time.slice(0,5)}`
+      : 'Heute geschlossen';
+
     html += `<div class="hours-block">
       <div class="hours-header">
         <span class="tag-group-label">Öffnungszeiten</span>
-        <span class="hours-today ${todayHours ? 'open' : 'closed'}">${todayHours ? `Heute geöffnet · ${todayHours}` : 'Heute geschlossen'}</span>
+        <span class="hours-today ${todayOpen ? 'open' : 'closed'}">${todayLabel}</span>
       </div>
       <div class="hours-grid">
-        ${Object.entries(DAYS).map(([key, label]) => {
-          const h = r.opening_hours[key];
-          const isToday = key === TODAY_KEY;
-          return `<div class="hours-row ${isToday ? 'today' : ''} ${!h ? 'closed' : ''}">
-            <span>${label}</span><span>${h || 'Geschlossen'}</span>
+        ${DAY_LABELS.map((label, dow) => {
+          const row = r._hours.find(h => h.day_of_week === dow);
+          const isToday = dow === TODAY_DOW;
+          const timeStr = (row && !row.is_closed)
+            ? `${row.open_time.slice(0,5)}–${row.close_time.slice(0,5)}`
+            : null;
+          return `<div class="hours-row ${isToday ? 'today' : ''} ${!timeStr ? 'closed' : ''}">
+            <span>${label}</span><span>${timeStr || 'Geschlossen'}</span>
           </div>`;
         }).join('')}
       </div>
