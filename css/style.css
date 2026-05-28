@@ -277,11 +277,31 @@ select.filter-select:focus { border-color: var(--accent); }
   padding: 0 40px 80px;
 }
 
+/* ─── STATS STRIP ─────────────────────────────────────────────── */
+.stats-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.stats-strip strong { color: var(--text-primary); font-weight: 700; }
+.stats-divider { color: var(--border); }
+
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  gap: 12px;
+}
+
+.section-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .section-title {
@@ -293,6 +313,52 @@ select.filter-select:focus { border-color: var(--accent); }
 .section-count {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* ─── OPEN/CLOSED BADGE ───────────────────────────────────────── */
+.card-image-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-open-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.card-open-badge.open { background: rgba(34,168,90,0.92); color: #fff; }
+.card-open-badge.closed { background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.7); }
+
+.card-cuisine-tag {
+  display: inline-block;
+  padding: 3px 9px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* ─── CARD STARS ──────────────────────────────────────────────── */
+.card-stars { color: var(--accent); font-size: 12px; letter-spacing: -1px; }
+
+/* Card entrance animation */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.restaurant-card {
+  animation: cardIn 0.4s ease both;
 }
 
 /* ─── RESTAURANT GRID ─────────────────────────────────────────── */
@@ -973,6 +1039,48 @@ select.filter-select:focus { border-color: var(--accent); }
 }
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────── */
+/* ─── QUICK FACTS ─────────────────────────────────────────────── */
+.quick-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.quick-fact {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 100px;
+}
+
+/* ─── HIGHLIGHTS ──────────────────────────────────────────────── */
+.highlights-section { margin-bottom: 32px; }
+.highlights-grid { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.highlight-card {
+  display: flex;
+  gap: 16px;
+  padding: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+}
+.highlight-icon { font-size: 28px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+.highlight-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 2px; }
+.highlight-subtitle { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+.highlight-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+.highlight-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  transition: color var(--transition);
+}
+.highlight-link:hover { color: var(--accent-hover); }
+
 /* ─── OVERVIEW TAB ────────────────────────────────────────────── */
 .tag-group { margin-bottom: 24px; }
 .tag-group-label {
@@ -1110,6 +1218,56 @@ select.filter-select:focus { border-color: var(--accent); }
 .map-open-btn:hover { color: var(--accent); border-color: var(--accent); }
 
 .empty-tab { padding: 48px 0; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+/* ─── REVIEW HISTOGRAM ────────────────────────────────────────── */
+.reviews-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.review-histogram { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.histogram-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.histogram-label { width: 20px; text-align: right; color: var(--text-muted); font-weight: 600; flex-shrink: 0; }
+.histogram-bar-wrap { flex: 1; background: var(--bg-subtle); border-radius: 4px; height: 8px; overflow: hidden; }
+.histogram-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.6s ease; }
+.histogram-count { width: 18px; color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+.review-source { color: var(--text-muted); font-size: 11px; }
+
+/* ─── STICKY BAR ──────────────────────────────────────────────── */
+.sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+.sticky-bar.visible { transform: translateY(0); }
+.sticky-bar-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.sticky-bar-btn {
+  padding: 11px 22px;
+  background: var(--text-primary);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+.sticky-bar-btn:hover { background: var(--accent); }
+@media (min-width: 901px) { .sticky-bar { display: none; } }
 
 @media (max-width: 900px) {
   .detail-body { grid-template-columns: 1fr; padding: 0 20px 60px; }

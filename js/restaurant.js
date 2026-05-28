@@ -13,6 +13,7 @@ async function loadRestaurant() {
     const [r] = await supabaseFetch(`restaurants?slug=eq.${encodeURIComponent(slug)}&is_active=eq.true&limit=1`);
     if (!r) { location.href = 'index.html'; return; }
     document.title = `${r.name} – Optriq`;
+    initStickyBar(r.name);
 
     const resSlug = r.reservation_slug || r.slug;
     const today = new Date().toISOString().slice(0, 10);
@@ -75,8 +76,38 @@ function render(r) {
 function renderOverview(r) {
   let html = '';
 
+  // Quick facts strip
+  const facts = [
+    r.cuisine_type && `🍽 ${r.cuisine_type}`,
+    r.price_range && `${r.price_range} Preisklasse`,
+    r.city && `📍 ${r.city}`,
+    (r.tripadvisor_rating||r.google_rating) && `⭐ ${(r.tripadvisor_rating||r.google_rating).toFixed(1)} Bewertung`,
+  ].filter(Boolean);
+  if (facts.length) {
+    html += `<div class="quick-facts">${facts.map(f=>`<span class="quick-fact">${f}</span>`).join('')}</div>`;
+  }
+
   if (r.description) {
     html += `<p class="detail-description">${r.description}</p>`;
+  }
+
+  // Highlights (Kajüte beer, automat, boat tour etc.)
+  if (r.highlights?.length) {
+    html += `<div class="highlights-section">
+      <span class="tag-group-label">Besonderheiten</span>
+      <div class="highlights-grid">
+        ${r.highlights.map(h => `
+          <div class="highlight-card">
+            <div class="highlight-icon">${h.icon}</div>
+            <div class="highlight-body">
+              <div class="highlight-title">${h.title}</div>
+              <div class="highlight-subtitle">${h.subtitle}</div>
+              <p class="highlight-text">${h.text}</p>
+              ${h.url ? `<a href="${h.url}" target="_blank" rel="noopener" class="highlight-link">${h.link_label} →</a>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
   }
 
   // Ambiance tags
@@ -171,19 +202,31 @@ function renderReviews(r) {
     return;
   }
 
+  // Histogram
+  const total = reviews.length;
+  const counts = [5,4,3,2,1].map(s => ({ s, n: reviews.filter(rv => rv.rating === s).length }));
+
   let html = `<div class="reviews-header">`;
   if (rating) {
     html += `<div class="review-score">
       <div class="review-score-number">${rating.toFixed(1)}</div>
-      <div>${stars(rating, 20)}</div>
-      <div class="review-score-count">${r.tripadvisor_review_count || r.google_review_count || reviews.length} Bewertungen</div>
+      <div>${stars(rating, 22)}</div>
+      <div class="review-score-count">${r.tripadvisor_review_count || r.google_review_count || total} Bewertungen</div>
       ${r.tripadvisor_ranking ? `<div class="review-ranking">${r.tripadvisor_ranking}</div>` : ''}
+    </div>
+    <div class="review-histogram">
+      ${counts.map(({s,n}) => `
+        <div class="histogram-row">
+          <span class="histogram-label">${s}★</span>
+          <div class="histogram-bar-wrap"><div class="histogram-bar" style="width:${total ? Math.round(n/total*100) : 0}%"></div></div>
+          <span class="histogram-count">${n}</span>
+        </div>`).join('')}
     </div>`;
   }
   if (r.tripadvisor_url) {
     html += `<a href="${r.tripadvisor_url}" target="_blank" rel="noopener" class="tripadvisor-link">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="#00aa6c"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5c2.072 0 4.01.588 5.647 1.61L19.5 6H4.5l1.853-.89A9.464 9.464 0 0 1 12 4.5zM6 9.75a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm12 0a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm-6 .75a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-      Alle Bewertungen auf TripAdvisor
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="#00aa6c"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.5c2.072 0 4.01.588 5.647 1.61L19.5 6H4.5l1.853-.89A9.464 9.464 0 0 1 12 4.5zM6 9.75a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm12 0a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5zm-6 .75a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+      Alle auf TripAdvisor
     </a>`;
   }
   html += `</div>`;
@@ -194,7 +237,9 @@ function renderReviews(r) {
         <div class="review-avatar">${rv.author[0]}</div>
         <div>
           <div class="review-author">${rv.author}</div>
-          <div class="review-meta">${stars(rv.rating, 13)} <span>${rv.date}</span></div>
+          <div class="review-meta">${stars(rv.rating, 13)} <span>${rv.date}</span>
+            ${rv.source ? `<span class="review-source">${rv.source === 'tripadvisor' ? '· TripAdvisor' : ''}</span>` : ''}
+          </div>
         </div>
       </div>
       <p class="review-text">"${rv.text}"</p>
@@ -347,6 +392,19 @@ function iconSvg(name) {
     'instagram': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',
   };
   return icons[name] || '';
+}
+
+// ── STICKY BAR ────────────────────────────────────────────────────
+function initStickyBar(name) {
+  const bar = document.getElementById('sticky-bar');
+  const nameEl = document.getElementById('sticky-bar-name');
+  if (!bar || !nameEl) return;
+  nameEl.textContent = name;
+  const hero = document.getElementById('detail-hero');
+  const obs = new IntersectionObserver(([e]) => {
+    bar.classList.toggle('visible', !e.isIntersecting);
+  }, { threshold: 0 });
+  obs.observe(hero);
 }
 
 // ── TABS ──────────────────────────────────────────────────────────

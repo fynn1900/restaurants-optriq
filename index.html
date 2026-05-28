@@ -57,6 +57,8 @@
     </select>
   </div>
 
+  <div id="stats-strip" class="stats-strip"></div>
+
   <div class="filter-chips-row">
     <div class="filter-chips" id="price-chips">
       <button class="chip active" data-price="">Alle Preise</button>
@@ -82,7 +84,15 @@
 <section class="section">
   <div class="section-header">
     <h2 class="section-title">Alle Restaurants</h2>
-    <span class="section-count" id="result-count"></span>
+    <div class="section-header-right">
+      <span class="section-count" id="result-count"></span>
+      <select class="filter-select" id="sort-select" style="font-size:13px;padding:7px 30px 7px 10px">
+        <option value="rating">Beste Bewertung</option>
+        <option value="distance">Entfernung</option>
+        <option value="price">Günstigste zuerst</option>
+        <option value="name">A–Z</option>
+      </select>
+    </div>
   </div>
   <div class="restaurant-grid" id="restaurant-grid">
     <!-- Skeleton loaders -->
