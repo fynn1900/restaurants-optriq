@@ -4,11 +4,21 @@ import { t, getLang, setLang, LANGUAGES, T } from './i18n.js';
 let allRestaurants = [], allHours = [];
 let activePrice = '', activeSort = 'rating', activeDistanceKm = null;
 let userCoords = null, reservationCounts = {}, favorites = new Set();
-let showOnlyOpen = false, showOnlyFav = false;
+let showOnlyOpen = false, showOnlyFav = false, activeMealTime = null;
+let mapView = false, leafletMap = null;
 
 const TODAY_DOW = new Date().getDay();
-const NOW_MINS  = new Date().getHours() * 60 + new Date().getMinutes();
+const NOW_H     = new Date().getHours();
+const NOW_MINS  = NOW_H * 60 + new Date().getMinutes();
 const SEEN_KEY  = 'optriq_seen';
+
+// Meal time windows
+const MEAL_TIMES = {
+  fruehstueck: { label: 'Frühstück', en: 'Breakfast', da: 'Morgenmad', icon: '☕', from: 7*60,  to: 11*60 },
+  mittag:      { label: 'Mittagessen', en: 'Lunch',    da: 'Frokost',  icon: '🥗', from: 11*60, to: 14*60 },
+  kaffee:      { label: 'Kaffee & Kuchen', en: 'Coffee', da: 'Kaffe',  icon: '🍰', from: 14*60, to: 17*60 },
+  abend:       { label: 'Abendessen', en: 'Dinner',   da: 'Aftensmad',icon: '🍽', from: 17*60, to: 23*60 },
+};
 
 // ─── UTILS ────────────────────────────────────────────────────────
 function haversineKm(a, b, c, d) {
@@ -19,12 +29,47 @@ function haversineKm(a, b, c, d) {
 function distLabel(km) {
   return km < 1 ? `${Math.round(km*1000)} ${t('m_away')}` : `${km.toFixed(1).replace('.',',')} ${t('km_away')}`;
 }
+function getHoursRow(resSlug, dow = TODAY_DOW) {
+  return allHours.find(h => h.restaurant_id === resSlug && h.day_of_week === dow) || null;
+}
 function isOpen(resSlug) {
-  const row = allHours.find(h => h.restaurant_id === resSlug && h.day_of_week === TODAY_DOW);
+  const row = getHoursRow(resSlug);
   if (!row || row.is_closed) return false;
   const o = +row.open_time.slice(0,2)*60 + +row.open_time.slice(3,5);
   const c = +row.close_time.slice(0,2)*60 + +row.close_time.slice(3,5);
   return NOW_MINS >= o && NOW_MINS < c;
+}
+function nextOpenInfo(resSlug) {
+  // Returns "Öffnet heute um HH:MM" or "Öffnet morgen um HH:MM" or null
+  const row = getHoursRow(resSlug);
+  if (row && !row.is_closed) {
+    const o = +row.open_time.slice(0,2)*60 + +row.open_time.slice(3,5);
+    if (NOW_MINS < o) return `Öffnet um ${row.open_time.slice(0,5)} Uhr`;
+  }
+  // Check next 6 days
+  for (let d = 1; d <= 6; d++) {
+    const dow = (TODAY_DOW + d) % 7;
+    const r = getHoursRow(resSlug, dow);
+    if (r && !r.is_closed) {
+      return d === 1 ? `Öffnet morgen um ${r.open_time.slice(0,5)}` : `Öffnet ${['So','Mo','Di','Mi','Do','Fr','Sa'][dow]}`;
+    }
+  }
+  return null;
+}
+function closingSoonInfo(resSlug) {
+  const row = getHoursRow(resSlug);
+  if (!row || row.is_closed) return null;
+  const c = +row.close_time.slice(0,2)*60 + +row.close_time.slice(3,5);
+  const diff = c - NOW_MINS;
+  if (diff > 0 && diff <= 60) return `Schließt in ${diff} Min`;
+  return null;
+}
+function isOpenDuring(resSlug, fromMins, toMins) {
+  const row = getHoursRow(resSlug);
+  if (!row || row.is_closed) return false;
+  const o = +row.open_time.slice(0,2)*60 + +row.open_time.slice(3,5);
+  const c = +row.close_time.slice(0,2)*60 + +row.close_time.slice(3,5);
+  return o <= toMins && c >= fromMins;
 }
 function rating(r) {
   const v = r.google_rating || r.tripadvisor_rating;
@@ -150,6 +195,86 @@ function applyI18n() {
   renderStats(allRestaurants);
 }
 
+// ─── WEATHER ──────────────────────────────────────────────────────
+const WX_ICONS = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',61:'🌧',63:'🌧',71:'🌨',80:'🌦',95:'⛈'};
+async function loadWeather(lat, lng) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code&timezone=auto`;
+    const data = await (await fetch(url)).json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    const icon = WX_ICONS[code] || '🌡';
+    const el = document.getElementById('weather-strip');
+    if (!el) return;
+    const isGood = temp >= 18 && [0,1,2,3].includes(code);
+    el.style.display = 'flex';
+    el.innerHTML = `<span class="wx-icon">${icon}</span><span class="wx-temp">${temp}°C</span><span class="wx-msg">${isGood ? '– Perfekt für die Terrasse!' : temp >= 10 ? '– Drinnen gemütlich.' : '– Warm bleiben!'}</span>`;
+  } catch {}
+}
+
+// ─── MEAL TIME BAR ────────────────────────────────────────────────
+function renderMealTimeBar() {
+  const bar = document.getElementById('meal-time-bar');
+  if (!bar) return;
+  const lang = getLang();
+  const active = Object.entries(MEAL_TIMES).find(([,v]) => NOW_MINS >= v.from && NOW_MINS < v.to)?.[0] || null;
+  bar.innerHTML = `<div class="meal-bar-label">Für heute:</div>` +
+    Object.entries(MEAL_TIMES).map(([key, m]) => {
+      const lbl = lang === 'en' ? m.en : lang === 'da' ? m.da : m.label;
+      const isCurrent = key === active;
+      return `<button class="meal-chip ${activeMealTime===key?'active':''} ${isCurrent?'current':''}" data-meal="${key}">
+        ${m.icon} ${lbl}${isCurrent?' <span class="meal-now">jetzt</span>':''}
+      </button>`;
+    }).join('');
+  bar.style.display = 'flex';
+}
+
+// ─── MAP VIEW ─────────────────────────────────────────────────────
+function initMapView(restaurants) {
+  const el = document.getElementById('map-view');
+  if (!el) return;
+  el.style.display = 'block';
+  document.getElementById('restaurant-grid').style.display = 'none';
+
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+
+  // Center on restaurants or Germany
+  const withCoords = restaurants.filter(r => r.lat && r.lng);
+  const center = withCoords.length
+    ? [withCoords.reduce((s,r)=>s+r.lat,0)/withCoords.length, withCoords.reduce((s,r)=>s+r.lng,0)/withCoords.length]
+    : [53.5, 9.5];
+
+  leafletMap = L.map(el, { zoomControl: true }).setView(center, withCoords.length > 1 ? 9 : 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap', maxZoom: 19
+  }).addTo(leafletMap);
+
+  withCoords.forEach(r => {
+    const rv = r.google_rating || r.tripadvisor_rating;
+    const popup = `<div style="font-family:Inter,sans-serif;min-width:180px">
+      <strong style="font-size:14px">${r.name}</strong><br>
+      ${rv ? `<span style="color:#b8895a">★ ${rv.toFixed(1)}</span> · ` : ''}${r.cuisine_type||''}<br>
+      <a href="restaurant.html?slug=${r.slug}" style="color:#b8895a;font-weight:600;font-size:13px">Zur Detailseite →</a>
+    </div>`;
+    L.marker([r.lat, r.lng])
+      .bindPopup(popup, { maxWidth: 220 })
+      .addTo(leafletMap);
+  });
+
+  if (userCoords) {
+    L.circleMarker([userCoords.lat, userCoords.lng], { radius: 8, color: '#22a85a', fillColor: '#22a85a', fillOpacity: 0.5 })
+      .bindPopup('Mein Standort').addTo(leafletMap);
+  }
+  setTimeout(() => leafletMap.invalidateSize(), 100);
+}
+
+function hideMapView() {
+  const el = document.getElementById('map-view');
+  if (el) el.style.display = 'none';
+  document.getElementById('restaurant-grid').style.display = 'grid';
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+}
+
 // ─── DATA ─────────────────────────────────────────────────────────
 async function loadRestaurants() {
   progress(0.3);
@@ -164,6 +289,7 @@ async function loadRestaurants() {
     populateFilters(data);
     await loadReservationCounts(data);
     renderStats(data);
+    renderMealTimeBar();
     renderCards(filterRestaurants());
     progress(1);
   } catch {
@@ -211,7 +337,8 @@ function filterRestaurants() {
       && (!city||r.city===city) && (!cui||r.cuisine_type===cui)
       && (!minR||rv>=minR) && (!activePrice||r.price_range===activePrice)
       && (!showOnlyOpen||isOpen(sl))
-      && (!showOnlyFav||favorites.has(r.id));
+      && (!showOnlyFav||favorites.has(r.id))
+      && (!activeMealTime||isOpenDuring(sl, MEAL_TIMES[activeMealTime].from, MEAL_TIMES[activeMealTime].to));
   });
 
   if (userCoords && activeDistanceKm)
@@ -247,6 +374,8 @@ function renderCards(rs) {
     const rt   = rating(r);
     const sl   = r.reservation_slug||r.slug;
     const open = isOpen(sl);
+    const closing = open ? closingSoonInfo(sl) : null;
+    const nextOpen = !open ? nextOpenInfo(sl) : null;
     const isFav = favorites.has(r.id);
     const wasSeen = seen.has(r.slug);
 
@@ -259,7 +388,8 @@ function renderCards(rs) {
           ? `<img src="${r.cover_image_url}" alt="${r.name}" loading="lazy" onload="this.classList.add('loaded')">`
           : `<div class="card-image-placeholder"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>`}
         ${r.cuisine_type ? `<div class="card-image-badges"><span class="card-cuisine-tag">${r.cuisine_type}</span></div>` : ''}
-        <span class="card-open-badge ${open?'open':'closed'}">${open?tx.open:tx.closed}</span>
+        ${closing ? `<span class="card-open-badge closing">${closing}</span>` : `<span class="card-open-badge ${open?'open':'closed'}">${open?tx.open:tx.closed}</span>`}
+        ${nextOpen && !open ? `<span class="card-next-open">${nextOpen}</span>` : ''}
         ${r.price_range ? `<span class="card-price-tag">${r.price_range}</span>` : ''}
         ${dist!==null ? `<span class="card-distance-tag">${distLabel(dist)}</span>` : ''}
         ${wasSeen ? `<span class="card-seen-badge">${tx.seen}</span>` : ''}
@@ -340,6 +470,42 @@ window.addEventListener('scroll', () => {
   btt?.classList.toggle('visible', window.scrollY > 400);
 }, {passive: true});
 btt?.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+
+// Meal time chips
+document.getElementById('meal-time-bar')?.addEventListener('click', e => {
+  const chip = e.target.closest('[data-meal]'); if (!chip) return;
+  const key = chip.dataset.meal;
+  activeMealTime = activeMealTime === key ? null : key;
+  renderMealTimeBar();
+  applyFilters();
+});
+
+// Map/Grid toggle
+document.getElementById('view-toggle')?.addEventListener('click', () => {
+  mapView = !mapView;
+  document.getElementById('icon-map').style.display = mapView ? 'none' : 'block';
+  document.getElementById('icon-grid').style.display = mapView ? 'block' : 'none';
+  if (mapView) initMapView(filterRestaurants());
+  else hideMapView();
+});
+
+// Location → weather
+const origRequestLocation = requestLocation;
+window._extendedRequestLocation = () => {
+  if (!navigator.geolocation) return;
+  const btn = document.getElementById('location-btn');
+  btn.textContent = '…';
+  navigator.geolocation.getCurrentPosition(pos => {
+    userCoords = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> ${t('loc_active')}`;
+    btn.classList.add('active');
+    document.getElementById('distance-chips').style.display = 'flex';
+    loadWeather(pos.coords.latitude, pos.coords.longitude);
+    applyFilters();
+  }, () => { btn.textContent = t('loc_fail'); });
+};
+document.getElementById('location-btn').removeEventListener('click', requestLocation);
+document.getElementById('location-btn').addEventListener('click', window._extendedRequestLocation);
 
 // Init
 initTheme();

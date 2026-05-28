@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -66,6 +67,7 @@
     </select>
   </div>
 
+  <div id="weather-strip" class="weather-strip" style="display:none"></div>
   <div id="stats-strip" class="stats-strip"></div>
 
   <div class="filter-chips-row">
@@ -94,10 +96,16 @@
 </section>
 
 <section class="section">
+  <div class="meal-time-bar" id="meal-time-bar"></div>
+
   <div class="section-header">
     <h2 class="section-title">Alle Restaurants</h2>
     <div class="section-header-right">
       <span class="section-count" id="result-count"></span>
+      <button class="view-toggle" id="view-toggle" title="Kartenansicht">
+        <svg id="icon-map" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        <svg id="icon-grid" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
       <select class="filter-select" id="sort-select" style="font-size:13px;padding:7px 30px 7px 10px">
         <option value="rating">Beste Bewertung</option>
         <option value="distance">Entfernung</option>
@@ -106,6 +114,7 @@
       </select>
     </div>
   </div>
+  <div id="map-view" style="display:none"></div>
   <div class="restaurant-grid" id="restaurant-grid">
     <div class="skeleton-card"><div class="skeleton-img skeleton"></div><div class="skeleton-body"><div class="skeleton-line skeleton" style="width:60%"></div><div class="skeleton-line skeleton" style="width:40%"></div><div class="skeleton-line skeleton" style="width:80%"></div></div></div>
     <div class="skeleton-card"><div class="skeleton-img skeleton"></div><div class="skeleton-body"><div class="skeleton-line skeleton" style="width:70%"></div><div class="skeleton-line skeleton" style="width:35%"></div><div class="skeleton-line skeleton" style="width:90%"></div></div></div>
@@ -160,6 +169,7 @@
   </div>
 </footer>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module" src="js/listing.js"></script>
 </body>
 </html>

@@ -158,6 +158,7 @@ function render(r) {
   if (r.tripadvisor_ranking) meta.innerHTML += `<div class="detail-meta-item">${r.tripadvisor_ranking}</div>`;
 
   renderOverview(r, tx);
+  renderHours(r, tx);
   renderReviews(r, tx); // async, translates after initial render
   renderMap(r, tx);
   renderMenu(r, tx);
@@ -261,6 +262,87 @@ function renderOverview(r, tx) {
 window.copyAddr = function(addr) {
   navigator.clipboard?.writeText(addr).then(() => toast(t('addr_copied')));
 };
+
+// ─── HOURS TAB ────────────────────────────────────────────────────
+function renderHours(r, tx) {
+  const el = document.getElementById('tab-hours');
+  if (!el) return;
+  if (!r._hours?.length) { el.innerHTML = `<div class="empty-tab">Keine Öffnungszeiten hinterlegt.</div>`; return; }
+
+  const DAY_ORDER = [1,2,3,4,5,6,0];
+  const todayStr  = new Date().toISOString().slice(0,10);
+  const todayEx   = r._exceptions?.find(e => e.date === todayStr);
+  const todayWk   = r._hours.find(h => h.day_of_week === TODAY_DOW);
+  const eff       = todayEx ?? todayWk;
+  const open      = eff && !eff.is_closed;
+  let statusLabel = open
+    ? `Heute geöffnet · ${eff.open_time.slice(0,5)}–${eff.close_time.slice(0,5)} Uhr`
+    : 'Heute geschlossen';
+
+  // Closing countdown
+  if (open) {
+    const closeH = +eff.close_time.slice(0,2), closeM = +eff.close_time.slice(3,5);
+    const closeMins = closeH*60+closeM;
+    const now = new Date().getHours()*60+new Date().getMinutes();
+    const diff = closeMins - now;
+    if (diff > 0 && diff <= 90) statusLabel += ` · Schließt in ${diff} Min`;
+  }
+
+  // Visual week grid
+  const visualGrid = DAY_ORDER.map(dow => {
+    const row  = r._hours.find(h => h.day_of_week === dow);
+    const ts   = (row && !row.is_closed) ? `${row.open_time.slice(0,5)}–${row.close_time.slice(0,5)}` : null;
+    const isToday = dow === TODAY_DOW;
+    return `<div class="hours-visual-row ${isToday?'today':''} ${!ts?'closed':''}">
+      <span class="hvr-day">${tx.days[dow]}</span>
+      <div class="hvr-bar-wrap">
+        ${ts ? `<div class="hvr-bar"><span class="hvr-time">${ts}</span></div>` : `<span class="hvr-closed">—</span>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Upcoming exceptions
+  const upcoming = (r._exceptions||[]).filter(e => e.date !== todayStr).slice(0,5);
+
+  // QR code
+  const qrUrl = encodeURIComponent(location.href);
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrUrl}&color=1a1612&bgcolor=f7f6f3`;
+
+  el.innerHTML = `
+    <div class="hours-status-hero ${open?'open':'closed'}">
+      <div class="hs-dot"></div>
+      <div>
+        <div class="hs-label">${statusLabel}</div>
+        ${!open && todayWk && !todayWk.is_closed ? `<div class="hs-sub">Öffnet heute noch um ${todayWk.open_time.slice(0,5)} Uhr</div>` : ''}
+      </div>
+    </div>
+
+    <div class="hours-visual-grid">${visualGrid}</div>
+
+    ${upcoming.length ? `<div class="hours-exceptions-block">
+      <h3 class="hours-exc-title">Besondere Öffnungszeiten</h3>
+      ${upcoming.map(e => {
+        const d = new Date(e.date+'T00:00:00');
+        const ds = d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+        const ts = !e.is_closed ? `${e.open_time.slice(0,5)}–${e.close_time.slice(0,5)} Uhr` : 'Geschlossen';
+        return `<div class="hours-exc-row ${e.is_closed?'closed':''}">
+          <span>${ds}${e.label?` <em>(${e.label})</em>`:''}</span><strong>${ts}</strong>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <div class="hours-qr-block">
+      <div>
+        <h3 class="hours-qr-title">QR-Code teilen</h3>
+        <p class="hours-qr-sub">Direkt zu dieser Seite – für Tischkarte, Flyer oder Weiterleitung</p>
+        <button class="menu-download" style="margin-top:10px" onclick="navigator.clipboard?.writeText(location.href).then(()=>alert('Link kopiert!'))">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Link kopieren
+        </button>
+      </div>
+      <img src="${qr}" alt="QR Code" class="qr-img" loading="lazy">
+    </div>`;
+}
 
 // ─── REVIEWS ──────────────────────────────────────────────────────
 async function renderReviews(r, tx) {
