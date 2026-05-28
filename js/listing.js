@@ -241,6 +241,61 @@ function renderHeroStats(restaurants) {
   }, 300);
 }
 
+// ─── RECOMMENDATIONS (#9) ─────────────────────────────────────────
+let lastWeatherGood = null; // null unknown, true/false after weather load
+
+function scoreRestaurant(r) {
+  let score = 0;
+  const sl = r.reservation_slug || r.slug;
+  // Rating weight
+  const rt = r.google_rating || r.tripadvisor_rating || 0;
+  score += rt * 2;
+  // Open right now
+  if (isOpen(sl)) score += 3;
+  // Matches current meal window
+  const mealNow = Object.values(MEAL_TIMES).find(m => NOW_MINS >= m.from && NOW_MINS < m.to);
+  if (mealNow && isOpenDuring(sl, mealNow.from, mealNow.to)) score += 2;
+  // Good weather → boost terrace/outdoor places
+  const hasOutdoor = /terrasse|garten|wasser|kanal|outdoor|drau/i.test((r.features||[]).join(' ') + ' ' + (r.ambiance_tags||[]).join(' ') + ' ' + (r.description||''));
+  if (lastWeatherGood === true && hasOutdoor) score += 3;
+  // Favorited
+  if (favorites.has(r.id)) score += 4;
+  // Today's reservations (popularity)
+  score += Math.min(reservationCounts[r.id] || 0, 5) * 0.4;
+  // Seen before = slight familiarity boost
+  return score;
+}
+
+function recoReason() {
+  const h = NOW_H;
+  if (lastWeatherGood === true) return 'Schönes Wetter – ideal für draußen';
+  if (h < 11) return 'Passend zum Frühstück';
+  if (h < 14) return 'Zur Mittagszeit beliebt';
+  if (h < 17) return 'Für Kaffee & Kuchen';
+  if (h < 22) return 'Für heute Abend ausgewählt';
+  return 'Für deinen nächsten Besuch';
+}
+
+function renderForYou() {
+  const sec  = document.getElementById('foryou-section');
+  const grid = document.getElementById('foryou-cards');
+  if (!sec || !grid || allRestaurants.length < 2) return;
+  const ranked = [...allRestaurants].map(r => ({ r, s: scoreRestaurant(r) })).sort((a,b)=>b.s-a.s).slice(0,4);
+  sec.style.display = 'block';
+  document.getElementById('foryou-reason').textContent = recoReason();
+  grid.innerHTML = ranked.map(({r}) => {
+    const rt = r.google_rating || r.tripadvisor_rating;
+    return `<div class="trending-card" onclick="location.href='restaurant.html?slug=${r.slug}'">
+      ${r.cover_image_url ? `<img class="trending-card-img" src="${r.cover_image_url}" alt="${r.name}" loading="lazy">` : `<div class="trending-card-img-placeholder"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/></svg></div>`}
+      <div class="trending-card-body">
+        <div class="trending-card-name">${r.name}</div>
+        <div class="trending-card-meta">${[r.city, r.cuisine_type].filter(Boolean).join(' · ')}</div>
+        ${rt ? `<div class="trending-card-count" style="background:var(--accent-dim)">★ ${rt.toFixed(1)}${isOpen(r.reservation_slug||r.slug)?' · jetzt offen':''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ─── TRENDING ─────────────────────────────────────────────────────
 function renderTrending(restaurants) {
   const sec  = document.getElementById('trending-section');
@@ -397,8 +452,10 @@ async function loadWeather(lat, lng) {
     const el = document.getElementById('weather-strip');
     if (!el) return;
     const isGood = temp >= 18 && [0,1,2,3].includes(code);
+    lastWeatherGood = isGood;
     el.style.display = 'flex';
     el.innerHTML = `<span class="wx-icon">${icon}</span><span class="wx-temp">${temp}°C</span><span class="wx-msg">${isGood ? '– Perfekt für die Terrasse!' : temp >= 10 ? '– Drinnen gemütlich.' : '– Warm bleiben!'}</span>`;
+    renderForYou(); // re-rank now that weather is known
   } catch {}
 }
 
@@ -483,6 +540,7 @@ async function loadRestaurants() {
     renderMealTimeBar();
     renderCards(filterRestaurants());
     renderHeroStats(data);
+    renderForYou();
     renderTrending(data);
     startLiveBookingPulse(data);
     initFloatCta();
