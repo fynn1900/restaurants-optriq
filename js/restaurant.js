@@ -8,40 +8,6 @@ if (!slug) location.href = 'index.html';
 const DAY_ORDER = [1,2,3,4,5,6,0];
 const TODAY_DOW = new Date().getDay();
 
-// ─── TRANSLATION ──────────────────────────────────────────────────
-const TRANS_CACHE_KEY = 'optriq_trans_cache';
-function getTransCache() { try { return JSON.parse(sessionStorage.getItem(TRANS_CACHE_KEY)||'{}'); } catch { return {}; } }
-function setTransCache(obj) { try { sessionStorage.setItem(TRANS_CACHE_KEY, JSON.stringify(obj)); } catch {} }
-
-async function translateText(text, targetLang) {
-  if (!text || targetLang === 'de') return text; // reviews are DE/EN, DE is default
-  const cacheKey = `${targetLang}::${text.slice(0,40)}`;
-  const cache = getTransCache();
-  if (cache[cacheKey]) return cache[cacheKey];
-
-  try {
-    const res = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=de|${targetLang}&de=fynn@optriq-automations.org`
-    );
-    const data = await res.json();
-    const translated = data?.responseData?.translatedText || text;
-    const newCache = getTransCache();
-    newCache[cacheKey] = translated;
-    setTransCache(newCache);
-    return translated;
-  } catch {
-    return text;
-  }
-}
-
-async function translateReviews(reviews, targetLang) {
-  if (targetLang === 'de') return reviews;
-  return Promise.all(reviews.map(async rv => ({
-    ...rv,
-    text: await translateText(rv.text, targetLang),
-  })));
-}
-
 // ─── UTILS ────────────────────────────────────────────────────────
 function stars(rating, size=16) {
   const f=Math.floor(rating), h=rating%1>=0.4, e=5-f-(h?1:0);
@@ -346,16 +312,16 @@ function renderHours(r, tx) {
     </div>`;
 }
 
-// ─── REVIEWS ──────────────────────────────────────────────────────
-async function renderReviews(r, tx) {
-  const lang = getLang();
-  // Render immediately in original, then translate async
+// ─── REVIEWS (Google-style, original language, star filter) ───────
+let _reviewFilter = 0; // 0 = all, else star value
+
+function renderReviews(r, tx) {
   const reviews = r.reviews;
   const rv = r.google_rating||r.tripadvisor_rating;
   if (!reviews?.length) { document.getElementById('tab-reviews').innerHTML=`<div class="empty-tab">${tx.reviews} werden bald ergänzt.</div>`; return; }
 
   const total  = reviews.length;
-  const counts = [5,4,3,2,1].map(s=>({s, n:reviews.filter(rv=>rv.rating===s).length}));
+  const counts = [5,4,3,2,1].map(s=>({s, n:reviews.filter(x=>x.rating===s).length}));
 
   let html = `<div class="reviews-header">`;
   if (rv) {
@@ -367,11 +333,11 @@ async function renderReviews(r, tx) {
       ${r.tripadvisor_ranking?`<div class="review-ranking">${r.tripadvisor_ranking}</div>`:''}
     </div>
     <div class="review-histogram">${counts.map(({s,n})=>`
-      <div class="histogram-row">
+      <button class="histogram-row hist-filter ${_reviewFilter===s?'active':''}" data-stars="${s}">
         <span class="histogram-label">${s}★</span>
         <div class="histogram-bar-wrap"><div class="histogram-bar" style="width:${total?Math.round(n/total*100):0}%"></div></div>
         <span class="histogram-count">${n}</span>
-      </div>`).join('')}
+      </button>`).join('')}
     </div>`;
   }
   if (r.tripadvisor_url) {
@@ -380,8 +346,17 @@ async function renderReviews(r, tx) {
       ${tx.on_google}
     </a>`;
   }
-  html += `</div><div class="reviews-list">`;
-  html += reviews.map((rv, i)=>`<div class="review-card">
+  html += `</div>`;
+
+  // Filter chips (Google-style)
+  html += `<div class="review-filter-chips">
+    <button class="rev-chip ${_reviewFilter===0?'active':''}" data-stars="0">Alle (${total})</button>
+    ${[5,4,3,2,1].map(s => { const n = counts.find(c=>c.s===s).n; return n ? `<button class="rev-chip ${_reviewFilter===s?'active':''}" data-stars="${s}">${s} ★ (${n})</button>` : ''; }).join('')}
+  </div>`;
+
+  const filtered = _reviewFilter ? reviews.filter(x => x.rating === _reviewFilter) : reviews;
+  html += `<div class="reviews-list">`;
+  html += filtered.map(rv=>`<div class="review-card">
     <div class="review-card-top">
       <div class="review-avatar">${rv.author[0]}</div>
       <div>
@@ -389,20 +364,18 @@ async function renderReviews(r, tx) {
         <div class="review-meta">${stars(rv.rating,13)} <span>${rv.date}</span>${rv.source==='google'?`<span class="review-source">· Google</span>`:''}</div>
       </div>
     </div>
-    <p class="review-text" data-review-idx="${i}">"${rv.text}"</p>
+    <p class="review-text">"${rv.text}"</p>
   </div>`).join('');
   html += `</div>`;
-  document.getElementById('tab-reviews').innerHTML = html;
+  const panel = document.getElementById('tab-reviews');
+  panel.innerHTML = html;
 
-  // Translate async if needed
-  if (lang !== 'de') {
-    translateReviews(reviews, lang).then(translated => {
-      translated.forEach((rv, i) => {
-        const el = document.querySelector(`[data-review-idx="${i}"]`);
-        if (el) el.textContent = `"${rv.text}"`;
-      });
-    });
-  }
+  // Wire filters (chips + histogram bars both filter)
+  panel.querySelectorAll('[data-stars]').forEach(b => b.addEventListener('click', () => {
+    const s = parseInt(b.dataset.stars);
+    _reviewFilter = (_reviewFilter === s && s !== 0) ? 0 : s;
+    renderReviews(r, tx);
+  }));
 }
 
 // ─── MAP ──────────────────────────────────────────────────────────

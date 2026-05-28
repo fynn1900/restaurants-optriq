@@ -554,6 +554,14 @@ select.filter-select:focus { border-color: var(--accent); }
 }
 .google-link:hover { border-color: #4285F4; color: #4285F4; }
 .review-source { color: var(--text-muted); font-size: 11px; }
+.hist-filter { border: none; background: none; cursor: pointer; width: 100%; padding: 0; border-radius: 4px; transition: background var(--transition); }
+.hist-filter:hover { background: var(--bg-subtle); }
+.hist-filter.active .histogram-bar { background: var(--accent-hover); }
+.hist-filter.active .histogram-label { color: var(--accent); font-weight: 700; }
+.review-filter-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 20px; }
+.rev-chip { padding: 6px 13px; border-radius: 100px; font-size: 13px; font-weight: 600; border: 1.5px solid var(--border); background: var(--bg-card); color: var(--text-secondary); transition: all var(--transition); }
+.rev-chip:hover { border-color: var(--accent); color: var(--accent); }
+.rev-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 .reviews-list { display: flex; flex-direction: column; gap: 14px; }
 .review-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 20px; }
 .review-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
