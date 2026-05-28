@@ -320,14 +320,13 @@ select.filter-select:focus { border-color: var(--accent); }
   position: absolute;
   top: 12px;
   left: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .card-open-badge {
-  display: inline-block;
-  padding: 3px 9px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 3px 10px;
   border-radius: 100px;
   font-size: 11px;
   font-weight: 700;
@@ -430,8 +429,8 @@ select.filter-select:focus { border-color: var(--accent); }
 
 .card-price-tag {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  bottom: 12px;
+  left: 12px;
   padding: 4px 10px;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(8px);

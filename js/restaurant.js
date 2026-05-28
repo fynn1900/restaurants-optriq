@@ -78,10 +78,10 @@ function renderOverview(r) {
 
   // Quick facts strip
   const facts = [
-    r.cuisine_type && `🍽 ${r.cuisine_type}`,
+    r.cuisine_type && r.cuisine_type,
     r.price_range && `${r.price_range} Preisklasse`,
-    r.city && `📍 ${r.city}`,
-    (r.tripadvisor_rating||r.google_rating) && `⭐ ${(r.tripadvisor_rating||r.google_rating).toFixed(1)} Bewertung`,
+    r.city && r.city,
+    (r.tripadvisor_rating||r.google_rating) && `${(r.tripadvisor_rating||r.google_rating).toFixed(1)} / 5 Sterne`,
   ].filter(Boolean);
   if (facts.length) {
     html += `<div class="quick-facts">${facts.map(f=>`<span class="quick-fact">${f}</span>`).join('')}</div>`;
@@ -378,9 +378,7 @@ function renderBooking(r) {
 
 // ── HELPERS ───────────────────────────────────────────────────────
 function featureIcon(t) {
-  const map = { 'Terrasse': '☀️', 'Außenterrasse': '☀️', 'Außenbestuhlung': '🪑', 'Kanal': '🛶', 'WLAN': '📶', 'Kartenzahlung': '💳', 'Vegetarisch': '🌿', 'Vegan': '🌱', 'Cocktailbar': '🍹', 'Veranstaltungen': '🎉', 'Reservierungen': '📅' };
-  for (const k of Object.keys(map)) if (t.includes(k)) return map[k];
-  return '✓';
+  return '';
 }
 
 function iconSvg(name) {

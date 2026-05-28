@@ -31,8 +31,8 @@ function isOpenNow(resSlug) {
 }
 
 function ratingLabel(r) {
-  const val = r.tripadvisor_rating || r.google_rating;
-  const count = r.tripadvisor_review_count || r.google_review_count;
+  const val = r.google_rating || r.tripadvisor_rating;
+  const count = r.google_review_count || r.tripadvisor_review_count;
   return val ? { val, count } : null;
 }
 
@@ -171,11 +171,9 @@ function renderCards(restaurants) {
 
     return `<div class="restaurant-card" style="animation-delay:${i*60}ms" onclick="location.href='restaurant.html?slug=${r.slug}'">
       <div class="card-image">
-        ${r.cover_image_url ? `<img src="${r.cover_image_url}" alt="${r.name}" loading="lazy">` : `<div class="card-image-placeholder">🍽</div>`}
-        <div class="card-image-badges">
-          ${r.cuisine_type ? `<span class="card-cuisine-tag">${r.cuisine_type}</span>` : ''}
-          <span class="card-open-badge ${open ? 'open' : 'closed'}">${open ? 'Geöffnet' : 'Geschlossen'}</span>
-        </div>
+        ${r.cover_image_url ? `<img src="${r.cover_image_url}" alt="${r.name}" loading="lazy">` : `<div class="card-image-placeholder"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></div>`}
+        ${r.cuisine_type ? `<div class="card-image-badges"><span class="card-cuisine-tag">${r.cuisine_type}</span></div>` : ''}
+        <span class="card-open-badge ${open ? 'open' : 'closed'}">${open ? 'Geöffnet' : 'Geschlossen'}</span>
         ${r.price_range ? `<span class="card-price-tag">${r.price_range}</span>` : ''}
         ${distKm !== null ? `<span class="card-distance-tag">${distanceLabel(distKm)}</span>` : ''}
       </div>
