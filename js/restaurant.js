@@ -14,8 +14,14 @@ async function loadRestaurant() {
     document.title = `${r.name} – Optriq`;
 
     const resSlug = r.reservation_slug || r.slug;
-    const hours = await supabaseFetch(`opening_hours_weekly?restaurant_id=eq.${resSlug}&order=day_of_week`);
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [hours, exceptions] = await Promise.all([
+      supabaseFetch(`opening_hours_weekly?restaurant_id=eq.${resSlug}&order=day_of_week`),
+      supabaseFetch(`opening_hours_exceptions?restaurant_id=eq.${resSlug}&date=gte.${today}&order=date`),
+    ]);
     r._hours = hours;
+    r._exceptions = exceptions;
 
     render(r);
   } catch { location.href = 'index.html'; }
@@ -87,13 +93,22 @@ function renderOverview(r) {
     </div></div>`;
   }
 
-  // Opening hours from Supabase
+  // Opening hours: weekly + exceptions
   if (r._hours?.length) {
-    const todayRow = r._hours.find(h => h.day_of_week === TODAY_DOW);
-    const todayOpen = todayRow && !todayRow.is_closed;
-    const todayLabel = todayOpen
-      ? `Heute geöffnet · ${todayRow.open_time.slice(0,5)}–${todayRow.close_time.slice(0,5)}`
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayException = r._exceptions?.find(e => e.date === todayStr);
+    const todayWeekly = r._hours.find(h => h.day_of_week === TODAY_DOW);
+
+    // Exception overrides weekly for today
+    const effectiveToday = todayException ?? todayWeekly;
+    const todayOpen = effectiveToday && !effectiveToday.is_closed;
+    let todayLabel = todayOpen
+      ? `Heute geöffnet · ${effectiveToday.open_time.slice(0,5)}–${effectiveToday.close_time.slice(0,5)}`
       : 'Heute geschlossen';
+    if (todayException?.label) todayLabel += ` · ${todayException.label}`;
+
+    // Upcoming exceptions (next 14 days, excluding today)
+    const upcoming = (r._exceptions || []).filter(e => e.date !== todayStr);
 
     html += `<div class="hours-block">
       <div class="hours-header">
@@ -112,6 +127,19 @@ function renderOverview(r) {
           </div>`;
         }).join('')}
       </div>
+      ${upcoming.length ? `
+        <div class="exceptions-list">
+          <span class="tag-group-label" style="margin-top:16px;display:block">Besondere Öffnungszeiten</span>
+          ${upcoming.map(e => {
+            const d = new Date(e.date + 'T00:00:00');
+            const dateStr = d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+            const timeStr = !e.is_closed ? `${e.open_time.slice(0,5)}–${e.close_time.slice(0,5)}` : 'Geschlossen';
+            return `<div class="hours-row ${e.is_closed ? 'closed' : ''}">
+              <span>${dateStr}${e.label ? ` <em style="color:var(--text-muted);font-style:normal">(${e.label})</em>` : ''}</span>
+              <span>${timeStr}</span>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
     </div>`;
   }
 
